@@ -22,19 +22,23 @@ public class StartupSeedData implements CommandLineRunner {
     private final AdminUserRepository adminUserRepository;
     private final ProfileRepository profileRepository;
     private final CollegeExamCalendarRepository examCalendarRepository;
+    private final app.studyloop.backend.repository.UserFollowRepository userFollowRepository;
 
     public StartupSeedData(AdminUserRepository adminUserRepository,
                            ProfileRepository profileRepository,
-                           CollegeExamCalendarRepository examCalendarRepository) {
+                           CollegeExamCalendarRepository examCalendarRepository,
+                           app.studyloop.backend.repository.UserFollowRepository userFollowRepository) {
         this.adminUserRepository = adminUserRepository;
         this.profileRepository = profileRepository;
         this.examCalendarRepository = examCalendarRepository;
+        this.userFollowRepository = userFollowRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
         seedAdminUsers();
         seedStudentProfiles();
+        seedUserFollows();
         seedExamCalendar();
     }
 
@@ -68,7 +72,6 @@ public class StartupSeedData implements CommandLineRunner {
                     .id(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                     .email("studenta@student.com")
                     .fullName("Aarav Sharma")
-                    .avatarUrl("https://api.dicebear.com/7.x/adventurer/svg?seed=Aarav")
                     .college("IIT Madras")
                     .department("Computer Science")
                     .year(2)
@@ -82,13 +85,13 @@ public class StartupSeedData implements CommandLineRunner {
                     .streak(3)
                     .createdAt(Instant.now())
                     .build();
+            studentA.setGender("male");
 
             // Student B (Perfect Skill Swap match! Wants to learn Java, can teach React)
             Profile studentB = Profile.builder()
                     .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
                     .email("studentb@student.com")
                     .fullName("Bhavna Patel")
-                    .avatarUrl("https://api.dicebear.com/7.x/adventurer/svg?seed=Bhavna")
                     .college("IIT Madras")
                     .department("Computer Science")
                     .year(2)
@@ -102,13 +105,13 @@ public class StartupSeedData implements CommandLineRunner {
                     .streak(5)
                     .createdAt(Instant.now())
                     .build();
+            studentB.setGender("female");
 
             // Student C (Senior Mentor: Year 4, can teach WebRTC, wants to learn ML)
             Profile studentC = Profile.builder()
                     .id(UUID.fromString("33333333-3333-3333-3333-333333333333"))
                     .email("studentc@student.com")
                     .fullName("Chaitanya Reddy")
-                    .avatarUrl("https://api.dicebear.com/7.x/adventurer/svg?seed=Chaitanya")
                     .college("IIT Madras")
                     .department("Information Technology")
                     .year(4)
@@ -122,11 +125,33 @@ public class StartupSeedData implements CommandLineRunner {
                     .streak(12)
                     .createdAt(Instant.now())
                     .build();
+            studentC.setGender("male");
 
             profileRepository.save(studentA);
             profileRepository.save(studentB);
             profileRepository.save(studentC);
             System.out.println("Seeded student profiles (Aarav, Bhavna, Chaitanya) at IIT Madras");
+        }
+    }
+
+    private void seedUserFollows() {
+        if (userFollowRepository.count() == 0) {
+            UUID aaravId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+            UUID bhavnaId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+            UUID chaitanyaId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+
+            // Aarav follows Bhavna & Chaitanya
+            userFollowRepository.save(app.studyloop.backend.domain.UserFollow.builder().followerId(aaravId).followingId(bhavnaId).build());
+            userFollowRepository.save(app.studyloop.backend.domain.UserFollow.builder().followerId(aaravId).followingId(chaitanyaId).build());
+
+            // Bhavna follows Aarav
+            userFollowRepository.save(app.studyloop.backend.domain.UserFollow.builder().followerId(bhavnaId).followingId(aaravId).build());
+
+            // Chaitanya follows Aarav & Bhavna
+            userFollowRepository.save(app.studyloop.backend.domain.UserFollow.builder().followerId(chaitanyaId).followingId(aaravId).build());
+            userFollowRepository.save(app.studyloop.backend.domain.UserFollow.builder().followerId(chaitanyaId).followingId(bhavnaId).build());
+
+            System.out.println("Seeded user follow relationships between Aarav, Bhavna, and Chaitanya");
         }
     }
 

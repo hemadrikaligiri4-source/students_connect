@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     college VARCHAR(150),
     department VARCHAR(100),
     year INT CHECK (year BETWEEN 1 AND 5),
+    gender VARCHAR(20) DEFAULT 'male',
     bio TEXT,
     skills TEXT[] DEFAULT '{}',
     teaching_skills TEXT[] DEFAULT '{}',
@@ -67,6 +68,19 @@ CREATE TABLE IF NOT EXISTS public.connections (
 CREATE INDEX IF NOT EXISTS idx_connections_sender ON public.connections(sender_id);
 CREATE INDEX IF NOT EXISTS idx_connections_receiver ON public.connections(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_connections_status ON public.connections(status);
+
+-- 17. User Follows (Instagram-style follower / following relationships)
+CREATE TABLE IF NOT EXISTS public.user_follows (
+    id BIGSERIAL PRIMARY KEY,
+    follower_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    following_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_follow UNIQUE (follower_id, following_id),
+    CONSTRAINT check_self_follow CHECK (follower_id <> following_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON public.user_follows(follower_id);
+CREATE INDEX IF NOT EXISTS idx_user_follows_following ON public.user_follows(following_id);
 
 -- 3. College Exam Calendar (Boosts feed content during exams)
 CREATE TABLE IF NOT EXISTS public.college_exam_calendar (

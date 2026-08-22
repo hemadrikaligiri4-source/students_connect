@@ -24,6 +24,7 @@ public class GamificationController {
     private final UserBadgeRepository userBadgeRepository;
     private final EndorsementRepository endorsementRepository;
     private final CoinTransactionRepository coinTransactionRepository;
+    private final UserFollowRepository userFollowRepository;
     private final GamificationService gamificationService;
 
     public GamificationController(ProfileRepository profileRepository,
@@ -32,6 +33,7 @@ public class GamificationController {
                                   UserBadgeRepository userBadgeRepository,
                                   EndorsementRepository endorsementRepository,
                                   CoinTransactionRepository coinTransactionRepository,
+                                  UserFollowRepository userFollowRepository,
                                   GamificationService gamificationService) {
         this.profileRepository = profileRepository;
         this.doubtRoomRepository = doubtRoomRepository;
@@ -39,6 +41,7 @@ public class GamificationController {
         this.userBadgeRepository = userBadgeRepository;
         this.endorsementRepository = endorsementRepository;
         this.coinTransactionRepository = coinTransactionRepository;
+        this.userFollowRepository = userFollowRepository;
         this.gamificationService = gamificationService;
     }
 
@@ -134,7 +137,7 @@ public class GamificationController {
         if (progressPercent < 0) progressPercent = 0;
 
         Map<String, Object> data = new HashMap<>();
-        data.put("profile", profile);
+        data.put("profile", enrichProfile(profile));
         data.put("doubtsSolved", doubtsSolved);
         data.put("endorsementsReceived", endorsementsReceived);
         data.put("campusRank", campusRank);
@@ -144,5 +147,14 @@ public class GamificationController {
         data.put("xpProgressPercentage", (int) progressPercent);
 
         return ResponseEntity.ok(data);
+    }
+
+    private Profile enrichProfile(Profile p) {
+        if (p == null) return null;
+        if (userFollowRepository != null) {
+            p.setFollowersCount(userFollowRepository.countByFollowingId(p.getId()));
+            p.setFollowingCount(userFollowRepository.countByFollowerId(p.getId()));
+        }
+        return p;
     }
 }

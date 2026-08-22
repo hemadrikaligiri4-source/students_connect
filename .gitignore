@@ -4,6 +4,8 @@ target/
 dist/
 build/
 .output/
+tools/
+*.timestamp-*.mjs
 
 # Logs & Temporary Files
 *.log
