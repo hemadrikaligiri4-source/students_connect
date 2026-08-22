@@ -27,6 +27,7 @@ public class Profile {
     private String college;
     private String department;
     private Integer year;
+    private String gender = "male";
     private String bio;
 
     @Convert(converter = ListToStringConverter.class)
@@ -41,6 +42,29 @@ public class Profile {
     @Column(name = "learning_goals", columnDefinition = "text")
     private List<String> learningGoals = new ArrayList<>();
 
+    @Convert(converter = ListToStringConverter.class)
+    @Column(name = "preferred_languages", columnDefinition = "text")
+    private List<String> preferredLanguages = new ArrayList<>();
+
+    @Convert(converter = ListToStringConverter.class)
+    @Column(name = "availability_slots", columnDefinition = "text")
+    private List<String> availabilitySlots = new ArrayList<>();
+
+    @Column(name = "teaching_style")
+    private String teachingStyle = "Interactive & Practical";
+
+    @Column(name = "learning_style")
+    private String learningStyle = "Visual & Hands-on";
+
+    @Column(name = "reliability_score")
+    private double reliabilityScore = 98.5;
+
+    @Column(name = "completed_sessions")
+    private int completedSessions = 12;
+
+    @Column(name = "preferred_partner_gender")
+    private String preferredPartnerGender = "any";
+
     private Integer xp = 0;
     private Integer coins = 0;
     private String level = "Beginner";
@@ -49,6 +73,12 @@ public class Profile {
 
     @Column(name = "last_active_at")
     private Instant lastActiveAt = Instant.now();
+
+    @Transient
+    private long followersCount = 0;
+
+    @Transient
+    private long followingCount = 0;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt = Instant.now();
@@ -101,6 +131,9 @@ public class Profile {
     public Integer getYear() { return year; }
     public void setYear(Integer year) { this.year = year; }
 
+    public String getGender() { return gender != null ? gender : "male"; }
+    public void setGender(String gender) { this.gender = gender; }
+
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
 
@@ -112,6 +145,27 @@ public class Profile {
 
     public List<String> getLearningGoals() { return learningGoals; }
     public void setLearningGoals(List<String> learningGoals) { this.learningGoals = learningGoals; }
+
+    public List<String> getPreferredLanguages() { return preferredLanguages; }
+    public void setPreferredLanguages(List<String> preferredLanguages) { this.preferredLanguages = preferredLanguages; }
+
+    public List<String> getAvailabilitySlots() { return availabilitySlots; }
+    public void setAvailabilitySlots(List<String> availabilitySlots) { this.availabilitySlots = availabilitySlots; }
+
+    public String getTeachingStyle() { return teachingStyle; }
+    public void setTeachingStyle(String teachingStyle) { this.teachingStyle = teachingStyle; }
+
+    public String getLearningStyle() { return learningStyle; }
+    public void setLearningStyle(String learningStyle) { this.learningStyle = learningStyle; }
+
+    public double getReliabilityScore() { return reliabilityScore; }
+    public void setReliabilityScore(double reliabilityScore) { this.reliabilityScore = reliabilityScore; }
+
+    public int getCompletedSessions() { return completedSessions; }
+    public void setCompletedSessions(int completedSessions) { this.completedSessions = completedSessions; }
+
+    public String getPreferredPartnerGender() { return preferredPartnerGender; }
+    public void setPreferredPartnerGender(String preferredPartnerGender) { this.preferredPartnerGender = preferredPartnerGender; }
 
     public Integer getXp() { return xp; }
     public void setXp(Integer xp) { this.xp = xp; }
@@ -130,6 +184,12 @@ public class Profile {
 
     public Instant getLastActiveAt() { return lastActiveAt; }
     public void setLastActiveAt(Instant lastActiveAt) { this.lastActiveAt = lastActiveAt; }
+
+    public long getFollowersCount() { return followersCount; }
+    public void setFollowersCount(long followersCount) { this.followersCount = followersCount; }
+
+    public long getFollowingCount() { return followingCount; }
+    public void setFollowingCount(long followingCount) { this.followingCount = followingCount; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

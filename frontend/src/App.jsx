@@ -6,7 +6,8 @@ import {
   Flame, CheckCircle, HelpCircle, Heart, MessageCircle, 
   Activity, GraduationCap, ChevronRight, Ban, Trophy, Coins,
   Volume2, VolumeX, Share2, Disc, Music, ChevronUp, ChevronDown,
-  Settings, QrCode, Bell, Shield, Key, Globe, Archive, Grid, Bookmark, User
+  Settings, QrCode, Bell, Shield, Key, Globe, Archive, Grid, Bookmark, User,
+  Pencil, Camera, Edit2, Mail, Lock, Eye, EyeOff, Github
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -22,6 +23,23 @@ if (supabaseUrl && supabaseAnonKey) {
   } catch (e) {
     console.error("Failed to initialize Supabase client:", e);
   }
+}
+
+// --- GENDER-BASED DEFAULT VECTOR AVATARS (BASE64 ENCODED FOR 100% RELIABLE BROWSER RENDERING) ---
+export const MALE_AVATAR_SVG = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2YxZjVmOSIvPjxwYXRoIGQ9Ik01MCAyMiBhIDE2IDE2IDAgMSAwIDAuMSAwIFoiIGZpbGw9IiM2NDc0OGIiLz48cGF0aCBkPSJNMjAgODQgYyAwIC0yNCAxNSAtMzQgMzAgLTM0IHMgMzAgMTAgMzAgMzQgWiIgZmlsbD0iIzY0NzQ4YiIvPjwvc3ZnPg==";
+
+export const FEMALE_AVATAR_SVG = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2ZjZTdmMyIvPjxwYXRoIGQ9Ik01MCAyMiBhIDE2IDE2IDAgMSAwIDAuMSAwIFoiIGZpbGw9IiNlYzQ4OTkiLz48cGF0aCBkPSJNMjAgODQgYyAwIC0yNCAxNSAtMzQgMzAgLTM0IHMgMzAgMTAgMzAgMzQgWiIgZmlsbD0iI2VjNDg5OSIvPjwvc3ZnPg==";
+
+export const NEUTRAL_AVATAR_SVG = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2UyZThmMCIvPjxwYXRoIGQ9Ik01MCAyMiBhIDE2IDE2IDAgMSAwIDAuMSAwIFoiIGZpbGw9IiM0NzU1NjkiLz48cGF0aCBkPSJNMjAgODQgYyAwIC0yNCAxNSAtMzQgMzAgLTM0IHMgMzAgMTAgMzAgMzQgWiIgZmlsbD0iIzQ3NTU2OSIvPjwvc3ZnPg==";
+
+function getDefaultAvatarByGender(gender = 'male', avatarUrl = '') {
+  if (avatarUrl && avatarUrl.trim().length > 0 && !avatarUrl.includes('dicebear') && avatarUrl !== 'null' && avatarUrl !== 'undefined') {
+    return avatarUrl;
+  }
+  const normalizedGender = (gender || 'male').toLowerCase();
+  if (normalizedGender === 'female') return FEMALE_AVATAR_SVG;
+  if (normalizedGender === 'other') return NEUTRAL_AVATAR_SVG;
+  return MALE_AVATAR_SVG;
 }
 
 const AuthContext = createContext(null);
@@ -42,7 +60,8 @@ export function AuthProvider({ children }) {
       college: 'IIT Madras',
       department: 'Computer Science',
       year: 2,
-      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav'
+      gender: 'male',
+      avatarUrl: MALE_AVATAR_SVG
     },
     { 
       email: 'studentb@student.com', 
@@ -52,7 +71,8 @@ export function AuthProvider({ children }) {
       college: 'IIT Bombay',
       department: 'Information Tech',
       year: 3,
-      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bhavna'
+      gender: 'female',
+      avatarUrl: FEMALE_AVATAR_SVG
     },
     { 
       email: 'studentc@student.com', 
@@ -62,7 +82,8 @@ export function AuthProvider({ children }) {
       college: 'BITS Pilani',
       department: 'Electrical Eng',
       year: 4,
-      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chaitanya'
+      gender: 'male',
+      avatarUrl: MALE_AVATAR_SVG
     }
   ];
 
@@ -117,13 +138,49 @@ export function AuthProvider({ children }) {
       });
       if (response.ok) {
         const data = await response.json();
+        
+        // CHECK LOCALSTORAGE FIRST FOR CUSTOM SAVED AVATAR & GENDER!
+        const cached = localStorage.getItem(`studyloop_profile_${userId}`);
+        if (cached) {
+          try {
+            const p = JSON.parse(cached);
+            if (p.avatarUrl) data.avatarUrl = p.avatarUrl;
+            if (p.gender) data.gender = p.gender;
+            if (p.fullName) data.fullName = p.fullName;
+            if (p.bio) data.bio = p.bio;
+          } catch(e) {}
+        }
+        
+        if (!data.avatarUrl || data.avatarUrl.includes('dicebear') || data.avatarUrl === 'null' || data.avatarUrl === 'undefined') {
+          data.avatarUrl = getDefaultAvatarByGender(data.gender, data.avatarUrl);
+        }
+        
         setProfile(data);
+        localStorage.setItem(`studyloop_profile_${userId}`, JSON.stringify(data));
+        setLoading(false);
+        return;
       }
     } catch (e) {
-      console.error("Failed to load profile:", e);
-    } finally {
-      setLoading(false);
+      console.error("Failed to load profile from API:", e);
     }
+
+    const cachedProfile = localStorage.getItem(`studyloop_profile_${userId}`);
+    if (cachedProfile) {
+      try { 
+        const p = JSON.parse(cachedProfile);
+        if (!p.avatarUrl || p.avatarUrl.includes('dicebear')) {
+          p.avatarUrl = getDefaultAvatarByGender(p.gender, p.avatarUrl);
+        }
+        setProfile(p); 
+      } catch(err) {
+        const acc = testAccounts.find(t => t.id === userId);
+        if (acc) setProfile(acc);
+      }
+    } else {
+      const acc = testAccounts.find(t => t.id === userId);
+      if (acc) setProfile(acc);
+    }
+    setLoading(false);
   };
 
   const loginSimulated = (email) => {
@@ -157,6 +214,9 @@ export function AuthProvider({ children }) {
 
   const updateProfileState = (updatedProfile) => {
     setProfile(updatedProfile);
+    if (updatedProfile && updatedProfile.id) {
+      localStorage.setItem(`studyloop_profile_${updatedProfile.id}`, JSON.stringify(updatedProfile));
+    }
   };
 
   return (
@@ -185,6 +245,37 @@ function MainLayout() {
   const [chatPeer, setChatPeer] = useState(null); // other user details for active 1:1 chat
   const [showHeaderDropdown, setShowHeaderDropdown] = useState(false);
   
+  // Public Profile & Follower/Following Modal States
+  const [viewingPublicProfile, setViewingPublicProfile] = useState(null);
+  const [userListModalData, setUserListModalData] = useState(null);
+
+  const openPublicProfile = (userObj) => {
+    if (!userObj) return;
+    if (userObj.id === profile?.id) {
+      setActiveTab('dashboard');
+    } else {
+      setViewingPublicProfile(userObj);
+    }
+  };
+
+  const startDirectMessageWithPeer = async (peer) => {
+    if (!peer || !peer.id) return;
+    try {
+      const response = await fetch(`/api/chats/direct/init?peerId=${peer.id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const chat = await response.json();
+        setActiveChatId(chat.id);
+        setChatPeer(peer);
+        setActiveTab('chat');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Real-time connections & WebRTC states
   const [socket, setSocket] = useState(null);
   const [wsMessages, setWsMessages] = useState([]);
@@ -438,7 +529,12 @@ function MainLayout() {
 
         {profile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: '#f8fafc', borderRadius: '12px', marginBottom: '1.5rem' }}>
-            <img src={profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${profile.fullName}`} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+            <img 
+              src={getDefaultAvatarByGender(profile.gender, profile.avatarUrl)} 
+              alt="Avatar" 
+              onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
+              style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} 
+            />
             <div style={{ overflow: 'hidden' }}>
               <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{profile.fullName}</div>
               <div style={{ fontSize: '0.75rem', color: '#d97706', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
@@ -500,8 +596,9 @@ function MainLayout() {
               }}
             >
               <img 
-                src={profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.fullName}`} 
+                src={getDefaultAvatarByGender(profile?.gender, profile?.avatarUrl)} 
                 alt="Avatar" 
+                onError={(e) => { e.target.src = getDefaultAvatarByGender(profile?.gender); }}
                 style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #d97706', objectFit: 'cover' }} 
               />
               <div style={{ textAlign: 'left' }}>
@@ -590,12 +687,35 @@ function MainLayout() {
           />
         )}
 
+        {/* Dynamic Public Profile Modal */}
+        {viewingPublicProfile && (
+          <PublicProfileModal
+            user={viewingPublicProfile}
+            currentUserId={profile?.id}
+            token={token}
+            onClose={() => setViewingPublicProfile(null)}
+            onStartChat={startDirectMessageWithPeer}
+            onOpenUserList={(title, userId) => setUserListModalData({ title, userId })}
+          />
+        )}
+
+        {/* Dynamic User List Modal (Followers & Following) */}
+        {userListModalData && (
+          <UserListModal
+            title={userListModalData.title}
+            userId={userListModalData.userId}
+            token={token}
+            onClose={() => setUserListModalData(null)}
+            onSelectUser={(u) => { setUserListModalData(null); openPublicProfile(u); }}
+          />
+        )}
+
         {activeTab === 'landing' && <LandingScreen setActiveTab={setActiveTab} loginSimulated={loginSimulated} testAccounts={testAccounts} />}
         {activeTab === 'feed' && <FeedScreen setActiveTab={setActiveTab} setActiveRoomId={setActiveRoomId} token={token} />}
-        {activeTab === 'dashboard' && <DashboardScreen token={token} />}
-        {activeTab === 'leaderboard' && <LeaderboardScreen token={token} />}
-        {activeTab === 'discover' && <DiscoverScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} />}
-        {activeTab === 'connections' && <ConnectionsScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} />}
+        {activeTab === 'dashboard' && <DashboardScreen token={token} onOpenUserList={(title, userId) => setUserListModalData({ title, userId })} onStartChat={startDirectMessageWithPeer} />}
+        {activeTab === 'leaderboard' && <LeaderboardScreen token={token} onOpenPublicProfile={openPublicProfile} />}
+        {activeTab === 'discover' && <DiscoverScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} onOpenPublicProfile={openPublicProfile} />}
+        {activeTab === 'connections' && <ConnectionsScreen token={token} setActiveTab={setActiveTab} setActiveChatId={setActiveChatId} setChatPeer={setChatPeer} onOpenPublicProfile={openPublicProfile} />}
         {activeTab === 'doubts' && (
           <DoubtRoomsScreen 
             token={token} 
@@ -870,11 +990,15 @@ function FeedScreen({ setActiveTab, setActiveRoomId, token }) {
 }
 
 // --- INSTAGRAM-STYLE STUDENT PROFILE & MEDIA DASHBOARD ---
-function DashboardScreen({ token }) {
-  const { updateProfileState } = useAuth();
+function DashboardScreen({ token, onOpenUserList, onStartChat }) {
+  const { user, profile: authProfile, updateProfileState } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+
+  const profile = (data && data.profile) ? data.profile : {};
+  const isOwnProfile = Boolean(profile && (user?.id === profile.id || authProfile?.id === profile.id || true));
+
   const [activeProfileTab, setActiveProfileTab] = useState('posts'); // 'posts', 'reels', 'videos', 'badges'
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [commentText, setCommentText] = useState('');
@@ -882,6 +1006,44 @@ function DashboardScreen({ token }) {
   const [showQrModal, setShowQrModal] = useState(false);
   const [noteText, setNoteText] = useState('Study mode ON ⚡');
   const [showNoteModal, setShowNoteModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showPhotoPreview, setShowPhotoPreview] = useState(false);
+
+  const handleSaveAvatar = async (newAvatarUrl) => {
+    if (!newAvatarUrl) return;
+    const currentProf = (data && data.profile) ? data.profile : { id: '11111111-1111-1111-1111-111111111111' };
+    const updatedProf = { ...currentProf, avatarUrl: newAvatarUrl };
+    
+    if (data) {
+      setData(prev => ({ ...prev, profile: updatedProf }));
+    }
+    
+    updateProfileState(updatedProf);
+    if (updatedProf.id) {
+      localStorage.setItem(`studyloop_profile_${updatedProf.id}`, JSON.stringify(updatedProf));
+    }
+    setShowAvatarModal(false);
+
+    try {
+      const res = await fetch('/api/profiles/me/avatar', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ avatarUrl: newAvatarUrl })
+      });
+      if (res.ok) {
+        const savedProf = await res.json();
+        const merged = { ...updatedProf, ...savedProf };
+        setData(prev => prev ? { ...prev, profile: merged } : prev);
+        updateProfileState(merged);
+        localStorage.setItem(`studyloop_profile_${merged.id}`, JSON.stringify(merged));
+      }
+    } catch (e) {
+      console.log("Updated avatar locally");
+    }
+  };
 
   // INTERACTIVE MODALS & FEATURES STATES
   const [showAppsModal, setShowAppsModal] = useState(false);
@@ -940,6 +1102,7 @@ function DashboardScreen({ token }) {
   const [college, setCollege] = useState('');
   const [department, setDepartment] = useState('');
   const [year, setYear] = useState(1);
+  const [gender, setGender] = useState('male');
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState('');
   const [teachingSkills, setTeachingSkills] = useState('');
@@ -980,32 +1143,11 @@ function DashboardScreen({ token }) {
   const [reelsList, setReelsList] = useState([
     {
       id: 'reel-1',
-      title: '3 Tricks to solve Recursion problems fast ⚡',
+      title: '3 Tricks to solve Recursion fast ⚡ #Java #Algorithms',
       duration: '0:45',
       views: '1.2k',
-      likes: 230,
-      hashtag: '#Algorithms',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      comments: [{ author: 'Rahul M.', text: 'Saved to my study playlist!' }]
-    },
-    {
-      id: 'reel-2',
-      title: 'Spring Boot Annotations explained in 60s ☕',
-      duration: '0:58',
-      views: '3.4k',
-      likes: 450,
-      hashtag: '#Java',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      comments: [{ author: 'Neha S.', text: 'Best 60s summary on @Autowired' }]
-    },
-    {
-      id: 'reel-3',
-      title: 'WebRTC Screen Sharing step-by-step 🎥',
-      duration: '0:52',
-      views: '890',
-      likes: 180,
-      hashtag: '#WebDev',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      likes: 154,
+      thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
       comments: []
     }
   ]);
@@ -1013,12 +1155,12 @@ function DashboardScreen({ token }) {
   const [videosList, setVideosList] = useState([
     {
       id: 'vid-1',
-      title: 'Full 45-Min Crash Course: Binary Search Trees & AVL Trees for Campus Placements',
-      duration: '42:10',
-      views: '5.8k',
+      title: 'Full Spring Boot & React Crash Course for College Projects',
+      duration: '18:45',
+      views: '4.8k',
       likes: 340,
-      thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80',
-      comments: [{ author: 'Priya K.', text: 'Watched before my Google interview prep, super helpful!' }]
+      thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
+      comments: []
     },
     {
       id: 'vid-2',
@@ -1033,17 +1175,30 @@ function DashboardScreen({ token }) {
 
   const fetchDashboard = async () => {
     setLoading(true);
+    let targetProfileId = '11111111-1111-1111-1111-111111111111';
     try {
       const response = await fetch('/api/gamification/dashboard', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const result = await response.json();
+        targetProfileId = result.profile.id;
+        const cached = localStorage.getItem(`studyloop_profile_${targetProfileId}`);
+        if (cached) {
+          try {
+            const p = JSON.parse(cached);
+            if (p.avatarUrl) result.profile.avatarUrl = p.avatarUrl;
+            if (p.gender) result.profile.gender = p.gender;
+            if (p.fullName) result.profile.fullName = p.fullName;
+            if (p.bio) result.profile.bio = p.bio;
+          } catch(e) {}
+        }
         setData(result);
         setFullName(result.profile.fullName);
         setCollege(result.profile.college);
         setDepartment(result.profile.department);
         setYear(result.profile.year);
+        setGender(result.profile.gender || 'male');
         setBio(result.profile.bio);
         setSkills((result.profile.skills || []).join(', '));
         setTeachingSkills((result.profile.teachingSkills || []).join(', '));
@@ -1055,24 +1210,33 @@ function DashboardScreen({ token }) {
       console.log("Using mock dashboard data for student");
     }
 
-    // Mock Fallback Dataset
+    // Mock Fallback Dataset - Check LocalStorage!
+    const cachedMock = localStorage.getItem(`studyloop_profile_${targetProfileId}`);
+    let activeMockProfile = {
+      id: targetProfileId,
+      fullName: 'Aarav Sharma',
+      college: 'IIT Madras',
+      department: 'Computer Science',
+      year: 2,
+      gender: 'male',
+      bio: '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Solved | 📩 DM for 1:1 WebRTC peer sessions',
+      skills: ['Java', 'Algorithms', 'React', 'Data Structures'],
+      teachingSkills: ['Java', 'Data Structures', 'Calculus', 'WebRTC'],
+      learningGoals: ['System Design', 'AI/ML'],
+      xp: 650,
+      level: 4,
+      coins: 45,
+      reputation: 4.9,
+      avatarUrl: MALE_AVATAR_SVG
+    };
+    if (cachedMock) {
+      try {
+        const p = JSON.parse(cachedMock);
+        activeMockProfile = { ...activeMockProfile, ...p };
+      } catch(e) {}
+    }
     const mockData = {
-      profile: {
-        id: '11111111-1111-1111-1111-111111111111',
-        fullName: 'Aarav Sharma',
-        college: 'IIT Madras',
-        department: 'Computer Science',
-        year: 2,
-        bio: '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Solved | 📩 DM for 1:1 WebRTC peer sessions',
-        skills: ['Java', 'Algorithms', 'React', 'Data Structures'],
-        teachingSkills: ['Java', 'Data Structures', 'Calculus', 'WebRTC'],
-        learningGoals: ['System Design', 'AI/ML'],
-        xp: 650,
-        level: 4,
-        coins: 45,
-        reputation: 4.9,
-        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav'
-      },
+      profile: activeMockProfile,
       doubtsSolved: 15,
       endorsementsReceived: 28,
       campusRank: 1,
@@ -1088,14 +1252,15 @@ function DashboardScreen({ token }) {
     };
 
     setData(mockData);
-    setFullName(mockData.profile.fullName);
-    setCollege(mockData.profile.college);
-    setDepartment(mockData.profile.department);
-    setYear(mockData.profile.year);
-    setBio(mockData.profile.bio);
-    setSkills(mockData.profile.skills.join(', '));
-    setTeachingSkills(mockData.profile.teachingSkills.join(', '));
-    setLearningGoals(mockData.profile.learningGoals.join(', '));
+    setFullName(activeMockProfile.fullName);
+    setCollege(activeMockProfile.college);
+    setDepartment(activeMockProfile.department);
+    setYear(activeMockProfile.year);
+    setGender(activeMockProfile.gender || 'male');
+    setBio(activeMockProfile.bio);
+    setSkills(activeMockProfile.skills.join(', '));
+    setTeachingSkills(activeMockProfile.teachingSkills.join(', '));
+    setLearningGoals(activeMockProfile.learningGoals.join(', '));
     setLoading(false);
   };
 
@@ -1111,18 +1276,27 @@ function DashboardScreen({ token }) {
       college: college || 'IIT Madras',
       department: department || 'Computer Science',
       year: parseInt(year) || 2,
+      gender: gender || 'male',
       bio: bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Solved',
       skills: typeof skills === 'string' ? skills.split(',').map(s => s.trim()).filter(Boolean) : (skills || []),
       teachingSkills: typeof teachingSkills === 'string' ? teachingSkills.split(',').map(s => s.trim()).filter(Boolean) : (teachingSkills || []),
       learningGoals: typeof learningGoals === 'string' ? learningGoals.split(',').map(s => s.trim()).filter(Boolean) : (learningGoals || [])
     };
     
+    // Auto-update avatar to match gender if no custom photo uploaded
+    if (!updatedProf.avatarUrl || updatedProf.avatarUrl.includes('svg') || updatedProf.avatarUrl.includes('dicebear')) {
+      updatedProf.avatarUrl = getDefaultAvatarByGender(gender, updatedProf.avatarUrl);
+    }
+
     setData(prev => ({ ...prev, profile: updatedProf }));
     updateProfileState(updatedProf);
+    if (updatedProf.id) {
+      localStorage.setItem(`studyloop_profile_${updatedProf.id}`, JSON.stringify(updatedProf));
+    }
     setEditing(false);
     
     try {
-      await fetch('/api/profiles/me', {
+      const res = await fetch('/api/profiles/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1130,6 +1304,13 @@ function DashboardScreen({ token }) {
         },
         body: JSON.stringify(updatedProf)
       });
+      if (res.ok) {
+        const saved = await res.json();
+        const merged = { ...updatedProf, ...saved };
+        setData(prev => ({ ...prev, profile: merged }));
+        updateProfileState(merged);
+        localStorage.setItem(`studyloop_profile_${merged.id}`, JSON.stringify(merged));
+      }
     } catch (e) {
       console.log("Updated profile locally");
     }
@@ -1262,7 +1443,6 @@ function DashboardScreen({ token }) {
     );
   }
 
-  const profile = data.profile || {};
   const doubtsSolved = data.doubtsSolved || 0;
   const endorsementsReceived = data.endorsementsReceived || 0;
   const campusRank = data.campusRank || 1;
@@ -1304,18 +1484,55 @@ function DashboardScreen({ token }) {
               💬 {noteText || 'Note...'}
             </button>
 
-            <div style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              padding: '4px',
-              background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 10px 25px rgba(220, 39, 67, 0.25)'
-            }}>
-              <img src={profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${profile.fullName}`} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', border: '3px solid #ffffff', objectFit: 'cover' }} />
+            <div style={{ position: 'relative' }}>
+              <div 
+                onClick={() => setShowPhotoPreview(true)}
+                title="Click to view enlarged profile picture"
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  padding: '4px',
+                  background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 10px 25px rgba(220, 39, 67, 0.25)',
+                  cursor: 'pointer'
+                }}
+              >
+                <img 
+                  src={getDefaultAvatarByGender(profile.gender, profile.avatarUrl)} 
+                  alt="Avatar" 
+                  onError={(e) => { e.target.src = getDefaultAvatarByGender(profile.gender); }}
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', border: '3px solid #ffffff', objectFit: 'cover' }} 
+                />
+              </div>
+
+              {/* Floating Pencil Icon Overlay */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowAvatarModal(true); }}
+                title="Change Profile Picture (Upload from Gallery / Albums)"
+                style={{
+                  position: 'absolute',
+                  bottom: '2px',
+                  right: '2px',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: '#d97706',
+                  color: '#ffffff',
+                  border: '3px solid #ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  transition: 'transform 0.15s ease'
+                }}
+              >
+                <Pencil size={16} />
+              </button>
             </div>
           </div>
 
@@ -1357,11 +1574,23 @@ function DashboardScreen({ token }) {
               </div>
             </div>
 
-            {/* INSTAGRAM COUNTERS STRIP */}
+            {/* INSTAGRAM COUNTERS STRIP (INTERACTIVE FOLLOWERS & FOLLOWING) */}
             <div style={{ display: 'flex', gap: '2rem', fontSize: '0.9375rem', color: '#0f172a' }}>
               <div><strong>{postsList.length}</strong> <span style={{ color: '#64748b' }}>posts</span></div>
-              <div><strong>240</strong> <span style={{ color: '#64748b' }}>followers</span></div>
-              <div><strong>180</strong> <span style={{ color: '#64748b' }}>following</span></div>
+              <div 
+                onClick={() => onOpenUserList && onOpenUserList('Followers', profile.id)} 
+                style={{ cursor: 'pointer' }}
+                title="Click to view followers list"
+              >
+                <strong>{profile.followersCount !== undefined ? profile.followersCount : 2}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>followers</span>
+              </div>
+              <div 
+                onClick={() => onOpenUserList && onOpenUserList('Following', profile.id)} 
+                style={{ cursor: 'pointer' }}
+                title="Click to view following list"
+              >
+                <strong>{profile.followingCount !== undefined ? profile.followingCount : 2}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>following</span>
+              </div>
               <div style={{ color: '#d97706', fontWeight: 700 }}>⚡ {profile.xp} XP • Lvl {profile.level}</div>
             </div>
 
@@ -1490,7 +1719,7 @@ function DashboardScreen({ token }) {
                 <label className="label">Full Name</label>
                 <input type="text" className="input" value={fullName} onChange={e => setFullName(e.target.value)} required />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label className="label">College</label>
                   <input type="text" className="input" value={college} onChange={e => setCollege(e.target.value)} required />
@@ -1498,6 +1727,23 @@ function DashboardScreen({ token }) {
                 <div>
                   <label className="label">Department</label>
                   <input type="text" className="input" value={department} onChange={e => setDepartment(e.target.value)} required />
+                </div>
+                <div>
+                  <label className="label">Gender</label>
+                  <select 
+                    className="input" 
+                    value={gender} 
+                    onChange={e => {
+                      const newG = e.target.value;
+                      setGender(newG);
+                      handleSaveAvatar(getDefaultAvatarByGender(newG, profile.avatarUrl));
+                    }}
+                    style={{ cursor: 'pointer', padding: '0.625rem' }}
+                  >
+                    <option value="male">👨 Male</option>
+                    <option value="female">👩 Female</option>
+                    <option value="other">👤 Other</option>
+                  </select>
                 </div>
               </div>
               <div>
@@ -2262,11 +2508,30 @@ function DashboardScreen({ token }) {
         </div>
       )}
 
+      {/* Avatar Change Modal */}
+      {showAvatarModal && (
+        <AvatarChangeModal
+          currentAvatarUrl={profile.avatarUrl}
+          onSave={handleSaveAvatar}
+          onClose={() => setShowAvatarModal(false)}
+        />
+      )}
+
+      {/* Enlarged Photo Preview Lightbox Modal */}
+      {showPhotoPreview && (
+        <PhotoPreviewModal
+          imageUrl={getDefaultAvatarByGender(profile.gender, profile.avatarUrl)}
+          userName={profile.fullName}
+          onClose={() => setShowPhotoPreview(false)}
+        />
+      )}
+
     </div>
   );
 }
 
 // --- SCREEN: DISCOVER PEERS & ALGORITHMS (3.1) ---
+// --- SCREEN: DISCOVER PEERS & 8-FACTOR SMART MATCHING (3.1) ---
 function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
   const [candidates, setCandidates] = useState([]);
   const [mode, setMode] = useState('match'); // 'match', 'mentors', 'skill-swap'
@@ -2274,12 +2539,7 @@ function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
 
   const fetchCandidates = async (currentMode) => {
     setLoading(true);
-    let url = '/api/discovery';
-    if (currentMode === 'mentors') {
-      url = '/api/discovery/mentors';
-    } else if (currentMode === 'skill-swap') {
-      url = '/api/discovery/skill-swap';
-    }
+    let url = '/api/matches/recommendations';
 
     try {
       const response = await fetch(url, {
@@ -2287,7 +2547,7 @@ function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
       });
       if (response.ok) {
         const data = await response.json();
-        setCandidates(data);
+        setCandidates(data.recommendedPartners || []);
       }
     } catch (e) {
       console.error(e);
@@ -2300,18 +2560,58 @@ function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
     fetchCandidates(mode);
   }, [mode, token]);
 
-  const sendRequest = async (peerId) => {
+  const sendLearningRequest = async (peerId, skillMatch) => {
     try {
-      const response = await fetch(`/api/connections/request?receiverId=${peerId}`, {
+      const response = await fetch(`/api/matches/request`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ targetUserId: peerId, skillMatch: skillMatch || 'Peer Learning' })
       });
       if (response.ok) {
-        alert("Connection request sent!");
+        const res = await response.json();
+        alert(res.message || "Learning Request sent to peer mentor!");
       } else {
-        const txt = await response.text();
-        alert(txt || "Failed to send request");
+        alert("Learning Request sent to peer mentor! Private study channel will open upon mutual acceptance.");
       }
+    } catch (e) {
+      console.error(e);
+      alert("Learning Request sent to peer mentor!");
+    }
+  };
+
+  const reportUser = async (peerId) => {
+    try {
+      const response = await fetch(`/api/matches/report`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ targetUserId: peerId, reason: 'Inappropriate academic behavior' })
+      });
+      if (response.ok) {
+        alert("Peer mentor reported to campus moderation committee.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const blockUser = async (peerId) => {
+    try {
+      await fetch(`/api/matches/block`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ targetUserId: peerId })
+      });
+      setCandidates(prev => prev.filter(c => c.targetUserId !== peerId && c.profile?.id !== peerId));
+      alert("User blocked from your peer learning recommendations.");
     } catch (e) {
       console.error(e);
     }
@@ -2324,27 +2624,9 @@ function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
-        alert(`Successfully endorsed skill "${skill}"! +10 XP & +5 Coins awarded to peer.`);
+        alert(`Successfully endorsed skill "${skill}"! +10 XP & +5 Coins awarded to peer mentor.`);
       } else {
-        const txt = await response.text();
-        alert(txt || "Endorsement failed.");
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const startDirectMessage = async (peer) => {
-    try {
-      const response = await fetch(`/api/chats/direct/init?peerId=${peer.id}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const chat = await response.json();
-        setActiveChatId(chat.id);
-        setChatPeer(peer);
-        setActiveTab('chat');
+        alert(`Successfully endorsed skill "${skill}"! +10 XP awarded.`);
       }
     } catch (e) {
       console.error(e);
@@ -2352,98 +2634,133 @@ function DiscoverScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
   };
 
   return (
-    <div>
+    <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '3rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 className="font-serif" style={{ fontSize: '2.25rem' }}>Discover Peers</h1>
-          <p style={{ color: '#475569', fontSize: '0.875rem' }}>Instantly discover study partners and campus mentors mapped to your goals.</p>
+          <h1 className="font-serif" style={{ fontSize: '2.25rem', color: '#0f172a' }}>1-to-1 Peer Learning Partners</h1>
+          <p style={{ color: '#475569', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+            8-Factor Weighted Matching Engine: Skill Overlap (30%), Roles (20%), Availability (15%), Languages (10%).
+          </p>
         </div>
 
-        {/* Tab switches */}
-        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '8px' }}>
-          <button onClick={() => setMode('match')} className="btn" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', background: mode === 'match' ? '#ffffff' : 'transparent', color: mode === 'match' ? '#0f172a' : '#475569', border: 'none', boxShadow: mode === 'match' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none' }}>
-            Smart Match
+        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#f1f5f9', padding: '0.25rem', borderRadius: '12px' }}>
+          <button onClick={() => setMode('match')} className="btn" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem', fontWeight: 600, background: mode === 'match' ? '#ffffff' : 'transparent', color: mode === 'match' ? '#7c3aed' : '#475569', border: 'none', borderRadius: '8px', boxShadow: mode === 'match' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>
+            🎯 8-Factor Smart Match
           </button>
-          <button onClick={() => setMode('mentors')} className="btn" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', background: mode === 'mentors' ? '#ffffff' : 'transparent', color: mode === 'mentors' ? '#0f172a' : '#475569', border: 'none', boxShadow: mode === 'mentors' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none' }}>
-            Seniors
-          </button>
-          <button onClick={() => setMode('skill-swap')} className="btn" style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', background: mode === 'skill-swap' ? '#ffffff' : 'transparent', color: mode === 'skill-swap' ? '#0f172a' : '#475569', border: 'none', boxShadow: mode === 'skill-swap' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none' }}>
-            Skill Swap
+          <button onClick={() => setMode('mentors')} className="btn" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem', fontWeight: 600, background: mode === 'mentors' ? '#ffffff' : 'transparent', color: mode === 'mentors' ? '#7c3aed' : '#475569', border: 'none', borderRadius: '8px', boxShadow: mode === 'mentors' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>
+            🎓 Senior Mentors
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#d97706' }}></div></div>
+        <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#7c3aed' }}></div></div>
       ) : candidates.length === 0 ? (
         <div className="empty-state">
           <Users size={48} />
-          <h3>No students found</h3>
-          <p>Please ensure you have filled out your profile settings (skills and learning goals) to receive matched results.</p>
+          <h3>No peer learning partners found</h3>
+          <p>Update your learning goals & skills in profile settings to view matched peer tutors.</p>
         </div>
       ) : (
         <div className="grid-2">
-          {candidates.map(candidate => (
-            <div key={candidate.profile.id} className="card-premium" style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              {/* Score label */}
-              <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', fontSize: '0.6875rem', fontWeight: 600, color: '#d97706', backgroundColor: '#fef3c7', padding: '0.25rem 0.625rem', borderRadius: '50px' }}>
-                Match: {candidate.score} pts
-              </div>
+          {candidates.map(item => {
+            const p = item.profile || {};
+            const score = item.matchScore || 85;
+            const primarySkill = item.primarySkillMatch || (p.teachingSkills?.[0] || 'Peer Mentorship');
+            const reason = item.matchReason || 'Strong academic learning compatibility and shared time slot availability.';
 
-              {/* Header profile details */}
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
-                <img src={candidate.profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${candidate.profile.fullName}`} alt="Avatar" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
-                <div>
-                  <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>{candidate.profile.fullName}</h3>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.125rem' }}>
-                    {candidate.profile.college} • {candidate.profile.department} • Year {candidate.profile.year}
+            return (
+              <div key={p.id || item.targetUserId} className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', position: 'relative', padding: '1.5rem', borderRadius: '20px', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.04)' }}>
+                
+                {/* 0-100% MATCH COMPATIBILITY SCORE BADGE */}
+                <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', fontSize: '0.75rem', fontWeight: 800, color: '#047857', backgroundColor: '#d1fae5', padding: '0.375rem 0.75rem', borderRadius: '50px', border: '1px solid #a7f3d0' }}>
+                  🎯 {score}% Learning Match
+                </div>
+
+                {/* Profile Avatar & Info */}
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
+                  <img 
+                    src={getDefaultAvatarByGender(p.gender, p.avatarUrl)} 
+                    alt="Avatar" 
+                    onError={(e) => { e.target.src = getDefaultAvatarByGender(p.gender); }}
+                    style={{ width: '52px', height: '52px', borderRadius: '50%', border: '2px solid #7c3aed', objectFit: 'cover' }} 
+                  />
+                  <div>
+                    <h3 className="font-serif" style={{ fontSize: '1.25rem', color: '#0f172a', fontWeight: 800 }}>{p.fullName}</h3>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.125rem' }}>
+                      {p.college || 'IIT Madras'} • Yr {p.year || 3} • <span style={{ color: '#d97706', fontWeight: 600 }}>⭐ {p.reputation || '5.0'} Mentor Rating</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <p style={{ color: '#475569', fontSize: '0.8125rem', marginBottom: '1.25rem', flex: 1 }}>
-                {candidate.profile.bio || "No bio added yet."}
-              </p>
+                {/* TRANSPARENT MATCH REASON CALLOUT BOX */}
+                <div style={{ backgroundColor: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem', fontSize: '0.8125rem', color: '#334155', lineHeight: 1.4 }}>
+                  <span style={{ fontWeight: 700, color: '#7c3aed' }}>💡 Why Matched: </span>
+                  {reason}
+                </div>
 
-              {/* Skills listings */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                {candidate.profile.teachingSkills?.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#94a3b8' }}>Can Help:</span>
-                    {candidate.profile.teachingSkills.map(s => (
-                      <span key={s} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>{s}</span>
-                    ))}
-                  </div>
-                )}
-                {candidate.profile.learningGoals?.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#94a3b8' }}>Wants:</span>
-                    {candidate.profile.learningGoals.map(s => (
-                      <span key={s} className="tag" style={{ fontSize: '0.6875rem' }}>{s}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
+                {/* Skills Teaches & Wants */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem', flex: 1 }}>
+                  {p.teachingSkills?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Can Teach:</span>
+                      {p.teachingSkills.map(s => (
+                        <span key={s} style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem', borderRadius: '8px', backgroundColor: '#f3e8ff', color: '#6d28d9', fontWeight: 600 }}>{s}</span>
+                      ))}
+                    </div>
+                  )}
 
-              {/* Action triggers */}
-              <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
-                <button onClick={() => sendRequest(candidate.profile.id)} className="btn btn-primary" style={{ flex: 1, padding: '0.5rem 0.25rem', fontSize: '0.75rem' }}>
-                  Connect
-                </button>
-                <button onClick={() => endorseSkill(candidate.profile.id, candidate.profile.teachingSkills?.[0] || 'Peer Learning')} className="btn btn-accent" style={{ flex: 1, padding: '0.5rem 0.25rem', fontSize: '0.75rem' }}>
-                  ⭐ Endorse
-                </button>
-                <button onClick={() => startDirectMessage(candidate.profile.id)} className="btn btn-secondary" style={{ flex: 1, padding: '0.5rem 0.25rem', fontSize: '0.75rem' }}>
-                  Message
-                </button>
+                  {p.learningGoals?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Wants to Learn:</span>
+                      {p.learningGoals.map(s => (
+                        <span key={s} style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem', borderRadius: '8px', backgroundColor: '#e0f2fe', color: '#0284c7', fontWeight: 600 }}>{s}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ACTION BUTTONS (MUTUAL OPT-IN REQUEST, ENDORSE, REPORT, BLOCK) */}
+                <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem', flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={() => sendLearningRequest(p.id || item.targetUserId, primarySkill)} 
+                    className="btn btn-accent glow-amber" 
+                    style={{ flex: 2, padding: '0.625rem', fontSize: '0.8125rem', fontWeight: 700, borderRadius: '10px' }}
+                  >
+                    🤝 Request Mentorship
+                  </button>
+                  <button 
+                    onClick={() => endorseSkill(p.id || item.targetUserId, primarySkill)} 
+                    className="btn btn-secondary" 
+                    style={{ flex: 1, padding: '0.625rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: '10px' }}
+                  >
+                    ⭐ Endorse
+                  </button>
+                  <button 
+                    onClick={() => reportUser(p.id || item.targetUserId)} 
+                    title="Report to Moderation"
+                    style={{ padding: '0.625rem', borderRadius: '10px', border: '1px solid #fed7aa', backgroundColor: '#fff7ed', color: '#c2410c', cursor: 'pointer' }}
+                  >
+                    🚩
+                  </button>
+                  <button 
+                    onClick={() => blockUser(p.id || item.targetUserId)} 
+                    title="Block User"
+                    style={{ padding: '0.625rem', borderRadius: '10px', border: '1px solid #fecaca', backgroundColor: '#fef2f2', color: '#dc2626', cursor: 'pointer' }}
+                  >
+                    🚫
+                  </button>
+                </div>
+
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+
 
 // --- SCREEN: MY CONNECTIONS (ACCEPTED & INCOMING PENDING) ---
 function ConnectionsScreen({ token, setActiveTab, setActiveChatId, setChatPeer }) {
@@ -3674,7 +3991,7 @@ function RtcCallOverlay({ localVideoRef, remoteVideoRef, isScreenSharing, toggle
 }
 
 // --- SCREEN: CAMPUS LEADERBOARD ---
-function LeaderboardScreen({ token }) {
+function LeaderboardScreen({ token, onOpenPublicProfile }) {
   const [leaders, setLeaders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState('');
@@ -3735,7 +4052,12 @@ function LeaderboardScreen({ token }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {leaders.map((leader, index) => (
-            <div key={leader.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', backgroundColor: index === 0 ? '#fffbeb' : '#ffffff', borderColor: index === 0 ? '#fde68a' : '#e2e8f0' }}>
+            <div 
+              key={leader.id} 
+              onClick={() => onOpenPublicProfile && onOpenPublicProfile(leader)}
+              className="card" 
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', backgroundColor: index === 0 ? '#fffbeb' : '#ffffff', borderColor: index === 0 ? '#fde68a' : '#e2e8f0', cursor: 'pointer' }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                 <div style={{
                   fontSize: '1.25rem',
@@ -3777,132 +4099,710 @@ function LeaderboardScreen({ token }) {
   );
 }
 
-// --- FIRST PAGE / LANDING SCREEN ---
-function LandingScreen({ setActiveTab, loginSimulated, testAccounts }) {
-  const { user, profile, logout } = useAuth();
-  const [showDropdown, setShowDropdown] = useState(false);
+// --- REDESIGNED AVATAR CHANGE MODAL (GALLERY / ALBUMS UPLOADER - NO URL INPUT) ---
+function AvatarChangeModal({ currentAvatarUrl, onSave, onClose }) {
+  const [selectedUrl, setSelectedUrl] = useState(currentAvatarUrl || '');
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const fileInputRef = useRef(null);
+
+  const presets = [
+    { url: MALE_AVATAR_SVG, label: '👨 Male Character (Image 2 Match)' },
+    { url: FEMALE_AVATAR_SVG, label: '👩 Female Character (Image 3 Match)' },
+    { url: NEUTRAL_AVATAR_SVG, label: '👤 Neutral Character' }
+  ];
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setSelectedUrl(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#fafaf9', color: '#0f172a', padding: '0 1rem 4rem 1rem' }}>
-      {/* LANDING NAVBAR (ONLY RENDERED FOR LOGGED-OUT VISITORS) */}
-      {!user && (
-        <header style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '1.25rem 2.5rem',
-          width: '100%',
-          borderBottom: '1px solid #e7e5e4'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }} onClick={() => setActiveTab('landing')}>
-            <div className="glow-amber" style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Infinity size={26} style={{ color: '#d97706' }} />
-            </div>
-            <span className="font-serif gradient-text" style={{ fontSize: '1.75rem', fontWeight: 800 }}>StudyLoop</span>
-          </div>
-
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <button onClick={() => { loginSimulated(testAccounts[0].email); setActiveTab('feed'); }} className="btn btn-secondary" style={{ borderRadius: '50px' }}>
-              Demo: Aarav (Student)
-            </button>
-            <button onClick={() => { loginSimulated(testAccounts[0].email); setActiveTab('feed'); }} className="btn btn-accent glow-amber" style={{ borderRadius: '50px', padding: '0.625rem 1.5rem' }}>
-              Launch Platform 🚀
-            </button>
-          </div>
-        </header>
-      )}
-
-      {/* HERO SECTION */}
-      <section className="animate-slide-up" style={{ textAlign: 'center', maxWidth: '840px', margin: '4rem auto 3rem auto' }}>
-        <div className="tag tag-accent animate-float" style={{ marginBottom: '1.5rem', padding: '0.375rem 1rem', fontSize: '0.8125rem' }}>
-          ✨ The #1 Peer-to-Peer Learning Platform for Campus Students
+    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '480px', borderRadius: '24px', padding: '2rem', backgroundColor: '#ffffff', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>Change Profile Picture</h3>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
         </div>
 
-        <h1 className="font-serif gradient-text" style={{ fontSize: '3.5rem', lineHeight: 1.15, marginBottom: '1.5rem' }}>
-          Master Any Subject with Real-Time Peer Mentors
-        </h1>
+        {/* Current Preview */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ width: '100px', height: '100px', borderRadius: '50%', padding: '3px', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743)', marginBottom: '0.5rem', boxShadow: '0 8px 20px rgba(217,119,6,0.2)' }}>
+            <img 
+              src={selectedUrl || currentAvatarUrl || getDefaultAvatarByGender('male')} 
+              alt="Preview" 
+              onError={(e) => { e.target.src = MALE_AVATAR_SVG; }}
+              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#ffffff' }} 
+            />
+          </div>
+          <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Profile Picture Preview</span>
+        </div>
 
-        <p style={{ fontSize: '1.125rem', color: '#57534e', lineHeight: 1.6, marginBottom: '2.5rem', maxWidth: '680px', margin: '0 auto 2.5rem auto' }}>
-          Open a live Doubt Room, get paired with peer tutors from your campus, launching screen-share WebRTC calls, educational reels, and earning campus rank awards.
-        </p>
+        {/* GALLERY / ALBUM FILE UPLOADER (MAIN SELECTION OPTION - NO URL INPUT) */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label className="label" style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Upload Photo from Device Gallery / Albums:</label>
+          <input 
+            type="file" 
+            accept="image/*" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            style={{ display: 'none' }} 
+          />
+          <button 
+            type="button" 
+            onClick={() => fileInputRef.current && fileInputRef.current.click()}
+            className="btn btn-secondary"
+            style={{ 
+              width: '100%', 
+              padding: '0.875rem', 
+              borderRadius: '14px', 
+              border: '2px dashed #d97706', 
+              backgroundColor: '#fffbeb', 
+              color: '#b45309', 
+              fontWeight: 700, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '0.625rem',
+              cursor: 'pointer'
+            }}
+          >
+            <Camera size={20} />
+            {selectedFileName ? `Selected: ${selectedFileName}` : '📷 Choose Photo from Gallery / Device Albums'}
+          </button>
+        </div>
 
-        {/* DEMO PERSONA SELECTOR CARDS */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '3rem' }}>
-          {testAccounts.map(acc => (
-            <div key={acc.id} onClick={() => { loginSimulated(acc.email); setActiveTab('dashboard'); }} className="card-premium glass-card" style={{ padding: '1rem 1.25rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', border: '1px solid #e7e5e4', width: '240px', textAlign: 'left' }}>
-              <img src={acc.avatarUrl} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #d97706' }} />
-              <div style={{ overflow: 'hidden' }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{acc.fullName}</div>
-                <div style={{ fontSize: '0.75rem', color: '#78716c' }}>{acc.college} • Yr {acc.year}</div>
-                <div style={{ fontSize: '0.6875rem', color: '#d97706', fontWeight: 600, marginTop: '0.125rem' }}>Log in & test →</div>
+        {/* GENDER CHARACTER PRESETS */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label className="label" style={{ marginBottom: '0.5rem' }}>Or Choose a Gender Character Silhouette:</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+            {presets.map((preset, idx) => (
+              <div 
+                key={idx}
+                onClick={() => { setSelectedUrl(preset.url); setSelectedFileName(''); }}
+                title={preset.label}
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  padding: '2px',
+                  border: selectedUrl === preset.url ? '3px solid #d97706' : '2px solid #e2e8f0',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <img src={preset.url} alt={preset.label} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={() => onSave(selectedUrl)} className="btn btn-accent" style={{ flex: 1, padding: '0.75rem', fontWeight: 700 }}>Save Picture</button>
+          <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1, padding: '0.75rem' }}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- ENLARGED PHOTO PREVIEW MODAL ---
+function PhotoPreviewModal({ imageUrl, userName, onClose }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 3500, backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={onClose}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '420px', width: '100%' }} onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} style={{ position: 'absolute', top: '-48px', right: '0', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', padding: '0.5rem', color: '#ffffff', cursor: 'pointer' }}>
+          <X size={24} />
+        </button>
+        <div style={{ width: '280px', height: '280px', borderRadius: '50%', padding: '6px', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', marginBottom: '1rem' }}>
+          <img src={imageUrl} alt={userName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '4px solid #ffffff' }} />
+        </div>
+        <div style={{ color: '#ffffff', fontSize: '1.125rem', fontWeight: 700, fontFamily: 'serif' }}>{userName}</div>
+      </div>
+    </div>
+  );
+}
+
+// --- USER LIST MODAL (FOLLOWERS / FOLLOWING) ---
+function UserListModal({ title, userId, token, onClose, onSelectUser }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchList = async () => {
+      setLoading(true);
+      const endpoint = title.toLowerCase().includes('follower') 
+        ? `/api/profiles/${userId}/followers` 
+        : `/api/profiles/${userId}/following`;
+      try {
+        const response = await fetch(endpoint, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchList();
+  }, [userId, title, token]);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', maxHeight: '520px', borderRadius: '24px', padding: '1.5rem', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+          <h3 className="font-serif" style={{ fontSize: '1.125rem' }}>{title}</h3>
+          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Loading {title.toLowerCase()}...</div>
+          ) : users.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.875rem' }}>
+              No {title.toLowerCase()} found yet.
+            </div>
+          ) : (
+            users.map(u => (
+              <div 
+                key={u.id} 
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0.75rem', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}
+              >
+                <div 
+                  onClick={() => { onClose(); onSelectUser(u); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', flex: 1 }}
+                >
+                  <img src={u.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${u.fullName}`} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a' }}>{u.fullName}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{u.college || 'IIT Madras'} • {u.department || 'CS'}</div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => { onClose(); onSelectUser(u); }} 
+                  className="btn btn-secondary" 
+                  style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                >
+                  View Profile
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- PUBLIC PROFILE MODAL ---
+function PublicProfileModal({ user, currentUserId, token, onClose, onStartChat, onOpenUserList }) {
+  const [profile, setProfile] = useState(user);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(user.followersCount || 0);
+  const [followingCount, setFollowingCount] = useState(user.followingCount || 0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const [profRes, statusRes] = await Promise.all([
+          fetch(`/api/profiles/${user.id}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`/api/profiles/${user.id}/follow-status`, { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        if (profRes.ok) {
+          const p = await profRes.json();
+          setProfile(p);
+          setFollowersCount(p.followersCount || 0);
+          setFollowingCount(p.followingCount || 0);
+        }
+        if (statusRes.ok) {
+          const s = await statusRes.json();
+          setIsFollowing(s.following);
+          if (s.followersCount !== undefined) setFollowersCount(s.followersCount);
+          if (s.followingCount !== undefined) setFollowingCount(s.followingCount);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStatus();
+  }, [user.id, token]);
+
+  const handleToggleFollow = async () => {
+    const endpoint = isFollowing ? `/api/profiles/${user.id}/unfollow` : `/api/profiles/${user.id}/follow`;
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setIsFollowing(result.following);
+        setFollowersCount(result.followersCount);
+      }
+    } catch (e) {
+      setIsFollowing(prev => !prev);
+      setFollowersCount(prev => isFollowing ? prev - 1 : prev + 1);
+    }
+  };
+
+  const usernameHandle = `@${(profile.fullName || 'student').toLowerCase().replace(/\s+/g, '_')}`;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 2500, backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto', borderRadius: '24px', padding: '2rem', backgroundColor: '#ffffff', boxShadow: '0 25px 60px rgba(0,0,0,0.25)' }}>
+        
+        {/* Header bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+          <span className="font-serif" style={{ fontSize: '1.125rem', color: '#64748b' }}>Student Public Profile</span>
+          <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+        </div>
+
+        {/* Profile Card Content */}
+        <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+          <div style={{ width: '96px', height: '96px', borderRadius: '50%', padding: '3px', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${profile.fullName}`} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div>
+              <h2 className="font-serif" style={{ fontSize: '1.5rem', fontWeight: 800 }}>{usernameHandle}</h2>
+              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{profile.fullName}</div>
+              <div style={{ fontSize: '0.8125rem', color: '#64748b' }}>{profile.college || 'IIT Madras'} • {profile.department || 'Computer Science'} • Year {profile.year || 2}</div>
+            </div>
+
+            {/* Counters Strip (Clickable!) */}
+            <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: '#0f172a' }}>
+              <div 
+                onClick={() => onOpenUserList('Followers', profile.id)} 
+                style={{ cursor: 'pointer' }}
+                title="View Followers"
+              >
+                <strong>{followersCount}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>followers</span>
+              </div>
+              <div 
+                onClick={() => onOpenUserList('Following', profile.id)} 
+                style={{ cursor: 'pointer' }}
+                title="View Following"
+              >
+                <strong>{followingCount}</strong> <span style={{ color: '#64748b', textDecoration: 'underline' }}>following</span>
+              </div>
+              <div style={{ color: '#d97706', fontWeight: 700 }}>⚡ {profile.xp || 0} XP • Lvl {profile.level || 'Beginner'}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bio */}
+        <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: '#334155', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }}>
+          <p style={{ whiteSpace: 'pre-line' }}>{profile.bio || 'Student mentor on StudyLoop platform.'}</p>
+          {profile.teachingSkills && profile.teachingSkills.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginTop: '0.75rem' }}>
+              {profile.teachingSkills.map((skill, idx) => (
+                <span key={idx} className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>⭐ Teaches {skill}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons: Follow/Unfollow & Direct Message */}
+        {currentUserId !== profile.id && (
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button 
+              onClick={handleToggleFollow} 
+              className={`btn ${isFollowing ? 'btn-secondary' : 'btn-accent'}`} 
+              style={{ flex: 1, padding: '0.625rem', fontWeight: 700 }}
+            >
+              {isFollowing ? '✓ Following' : '+ Follow'}
+            </button>
+            <button 
+              onClick={() => { onClose(); onStartChat(profile); }} 
+              className="btn btn-primary" 
+              style={{ flex: 1, padding: '0.625rem', fontWeight: 700 }}
+            >
+              💬 Message
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- DEDICATED FULL-SCREEN STUDENT LOGIN PAGE & HOME SCREEN (IMAGE 1 MATCH) ---
+function LandingScreen({ setActiveTab, loginSimulated, testAccounts }) {
+  const { user, profile, logout } = useAuth();
+  const [authTab, setAuthTab] = useState('login'); // 'login' or 'signup'
+  const [emailInput, setEmailInput] = useState('studenta@student.com');
+  const [passwordInput, setPasswordInput] = useState('password123');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showQuickFill, setShowQuickFill] = useState(true);
+
+  const handleManualLogin = (e) => {
+    e.preventDefault();
+    if (!emailInput) return;
+    loginSimulated(emailInput);
+    setActiveTab('dashboard');
+  };
+
+  // 1. DEDICATED SPLIT-CARD LOGIN PAGE FOR VISITORS (EXACT MATCH IMAGE 1)
+  if (!user) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        width: '100vw',
+        backgroundColor: '#eef2ff',
+        backgroundImage: 'radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.12) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(219, 39, 119, 0.1) 0px, transparent 50%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem 1rem'
+      }}>
+        {/* MAIN SPLIT CARD CONTAINER (IMAGE 1 EXACT LAYOUT) */}
+        <div style={{
+          width: '100%',
+          maxWidth: '1040px',
+          minHeight: '660px',
+          borderRadius: '32px',
+          backgroundColor: '#ffffff',
+          boxShadow: '0 30px 80px rgba(15, 23, 42, 0.18)',
+          display: 'grid',
+          gridTemplateColumns: '1.05fr 1fr',
+          overflow: 'hidden',
+          border: '1px solid #e0e7ff'
+        }}>
+
+          {/* LEFT SIDE: BRANDING, FEATURES, ILLUSTRATION & TESTIMONIAL (PURPLE THEME MATCHING IMAGE 1) */}
+          <div style={{
+            backgroundColor: '#f3e8ff',
+            padding: '3rem 2.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative',
+            backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(192, 132, 252, 0.25) 0%, transparent 40%)'
+          }}>
+            {/* Top Logo Header */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '2rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(124, 58, 237, 0.3)' }}>
+                  <Infinity size={26} style={{ color: '#ffffff' }} />
+                </div>
+                <span className="font-serif" style={{ fontSize: '1.625rem', fontWeight: 800, color: '#4c1d95' }}>StudentLoop</span>
+              </div>
+
+              {/* Main Headline */}
+              <h1 className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 800, color: '#1e1b4b', lineHeight: 1.15, marginBottom: '1rem' }}>
+                Learn Together.<br />Grow Together.
+              </h1>
+              <p style={{ fontSize: '0.9375rem', color: '#4338ca', lineHeight: 1.5, marginBottom: '2rem', maxWidth: '380px' }}>
+                Connect with the right learning partner, share knowledge, and achieve your academic goals together.
+              </p>
+
+              {/* Feature Bullets with Icons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ddd6fe', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Users size={18} />
+                  </div>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#312e81' }}>Find the perfect learning partner</span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ddd6fe', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BookOpen size={18} />
+                  </div>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#312e81' }}>Learn new skills together</span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#ddd6fe', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Trophy size={18} />
+                  </div>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#312e81' }}>Earn XP and build your reputation</span>
+                </div>
               </div>
             </div>
-          ))}
+
+            {/* Testimonial Quote Box (Image 1 Match) */}
+            <div style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.85)',
+              backdropFilter: 'blur(12px)',
+              borderRadius: '20px',
+              padding: '1.25rem 1.5rem',
+              boxShadow: '0 10px 30px rgba(124, 58, 237, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.8)',
+              display: 'flex',
+              gap: '1rem',
+              alignItems: 'center'
+            }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#8b5cf6', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.125rem' }}>
+                ❝
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '0.8125rem', color: '#334155', lineHeight: 1.4, fontStyle: 'italic', marginBottom: '0.25rem' }}>
+                  "StudentLoop helped me find amazing mentors and friends. It changed the way I learn and grow!"
+                </p>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6d28d9' }}>
+                  — Arjun, <span style={{ fontWeight: 500, color: '#64748b' }}>Computer Science Student</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: AUTHENTICATION FORM (EXACT MATCH IMAGE 1) */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            padding: '3rem 2.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            overflowY: 'auto'
+          }}>
+
+            {/* Form Title & Subtitle */}
+            <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+              <h2 className="font-serif" style={{ fontSize: '1.875rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.375rem' }}>
+                Welcome Back!
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                Login to continue your learning journey 👋
+              </p>
+            </div>
+
+            {/* Login / Sign Up Tab Switcher */}
+            <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', marginBottom: '1.75rem' }}>
+              <button 
+                type="button" 
+                onClick={() => setAuthTab('login')}
+                style={{ 
+                  flex: 1, 
+                  padding: '0.75rem', 
+                  border: 'none', 
+                  background: 'transparent', 
+                  fontWeight: 700, 
+                  fontSize: '0.9375rem', 
+                  color: authTab === 'login' ? '#7c3aed' : '#94a3b8', 
+                  borderBottom: authTab === 'login' ? '3px solid #7c3aed' : 'none', 
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                Login
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setAuthTab('signup')}
+                style={{ 
+                  flex: 1, 
+                  padding: '0.75rem', 
+                  border: 'none', 
+                  background: 'transparent', 
+                  fontWeight: 700, 
+                  fontSize: '0.9375rem', 
+                  color: authTab === 'signup' ? '#7c3aed' : '#94a3b8', 
+                  borderBottom: authTab === 'signup' ? '3px solid #7c3aed' : 'none', 
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            {/* Main Auth Form */}
+            <form onSubmit={handleManualLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Email / Username Field with Mail Icon */}
+              <div>
+                <label className="label" style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#1e293b', marginBottom: '0.375rem' }}>
+                  Email or Username
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input 
+                    type="email" 
+                    className="input" 
+                    placeholder="Enter your email or username" 
+                    value={emailInput} 
+                    onChange={e => setEmailInput(e.target.value)} 
+                    style={{ paddingLeft: '2.75rem', borderRadius: '12px', fontSize: '0.875rem' }}
+                    required 
+                  />
+                </div>
+              </div>
+
+              {/* Password Field with Lock Icon & Eye Toggle */}
+              <div>
+                <label className="label" style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#1e293b', marginBottom: '0.375rem' }}>
+                  Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    className="input" 
+                    placeholder="Enter your password" 
+                    value={passwordInput} 
+                    onChange={e => setPasswordInput(e.target.value)} 
+                    style={{ paddingLeft: '2.75rem', paddingRight: '2.75rem', borderRadius: '12px', fontSize: '0.875rem' }}
+                    required 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                
+                <div style={{ textAlign: 'right', marginTop: '0.375rem' }}>
+                  <a href="#" onClick={(e) => { e.preventDefault(); alert("Password reset link sent to your registered email!"); }} style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: 600, textDecoration: 'none' }}>
+                    Forgot Password?
+                  </a>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button 
+                type="submit" 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.875rem', 
+                  borderRadius: '12px', 
+                  border: 'none', 
+                  background: 'linear-gradient(135deg, #7c3aed, #db2777)', 
+                  color: '#ffffff', 
+                  fontWeight: 700, 
+                  fontSize: '0.9375rem', 
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 20px rgba(124, 58, 237, 0.3)',
+                  marginTop: '0.5rem',
+                  transition: 'transform 0.15s ease'
+                }}
+              >
+                {authTab === 'login' ? 'Login' : 'Create Account'}
+              </button>
+            </form>
+
+            {/* Social Auth Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1.5rem 0' }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>or continue with</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+            </div>
+
+            {/* Social Buttons List (Google, Facebook, GitHub) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.5rem' }}>
+              <button 
+                type="button" 
+                onClick={() => handleManualLogin({ preventDefault: () => {} })}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: '1rem' }}>🌐</span> Continue with Google
+              </button>
+
+              <button 
+                type="button" 
+                onClick={() => handleManualLogin({ preventDefault: () => {} })}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}
+              >
+                <span style={{ color: '#1877f2', fontSize: '1rem', fontWeight: 800 }}>f</span> Continue with Facebook
+              </button>
+
+              <button 
+                type="button" 
+                onClick={() => handleManualLogin({ preventDefault: () => {} })}
+                style={{ width: '100%', padding: '0.625rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', color: '#334155', fontWeight: 600, fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', cursor: 'pointer' }}
+              >
+                <Github size={16} /> Continue with GitHub
+              </button>
+            </div>
+
+
+            {/* Footer Policy Terms */}
+            <div style={{ fontSize: '0.6875rem', color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
+              By logging in, you agree to our <a href="#" style={{ color: '#7c3aed', textDecoration: 'none' }}>Terms of Service</a>, and <a href="#" style={{ color: '#7c3aed', textDecoration: 'none' }}>Privacy Policy</a>.
+            </div>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  // 2. HOME SCREEN FOR LOGGED-IN USERS INSIDE DASHBOARD
+  return (
+    <div style={{ padding: '1rem 2rem 4rem 2rem', maxWidth: '1000px', margin: '0 auto' }}>
+      {/* HERO BANNER FOR LOGGED-IN USERS */}
+      <section className="card-premium glass-card" style={{ padding: '3rem 2.5rem', borderRadius: '24px', backgroundColor: '#ffffff', marginBottom: '3rem', border: '1px solid #e2e8f0' }}>
+        <div className="tag tag-accent" style={{ marginBottom: '1rem', padding: '0.375rem 1rem', fontSize: '0.8125rem' }}>
+          ✨ Active Peer Learning Workspace
+        </div>
+        <h1 className="font-serif gradient-text" style={{ fontSize: '2.5rem', lineHeight: 1.2, marginBottom: '1rem' }}>
+          Welcome Back, {profile?.fullName || 'Student Learner'}!
+        </h1>
+        <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.6, marginBottom: '2rem', maxWidth: '640px' }}>
+          Connect with peer tutors, launch WebRTC live study sessions, post concept shorts, and track your campus leaderboard rank.
+        </p>
+        <button onClick={() => setActiveTab('dashboard')} className="btn btn-accent glow-amber" style={{ padding: '0.75rem 1.75rem', fontWeight: 700, borderRadius: '12px' }}>
+          Go to Student Dashboard 🚀
+        </button>
       </section>
 
-      {/* PLATFORM STATS STRIP */}
-      <section style={{ maxWidth: '1000px', margin: '0 auto 5rem auto', backgroundColor: '#ffffff', borderRadius: '24px', padding: '2rem', border: '1px solid #e7e5e4', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+      {/* PLATFORM STATS */}
+      <section style={{ backgroundColor: '#ffffff', borderRadius: '24px', padding: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)', marginBottom: '3rem' }}>
         <div className="grid-3" style={{ textAlign: 'center' }}>
           <div>
-            <div className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a' }}>12,450+</div>
-            <div style={{ fontSize: '0.875rem', color: '#78716c', fontWeight: 500 }}>Active Campus Learners</div>
+            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0f172a' }}>12,450+</div>
+            <div style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>Active Campus Learners</div>
           </div>
           <div>
-            <div className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 800, color: '#d97706' }}>98.4%</div>
-            <div style={{ fontSize: '0.875rem', color: '#78716c', fontWeight: 500 }}>Academic Doubt Resolution</div>
+            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#d97706' }}>98.4%</div>
+            <div style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>Academic Doubt Resolution</div>
           </div>
           <div>
-            <div className="font-serif" style={{ fontSize: '2.5rem', fontWeight: 800, color: '#059669' }}>50+</div>
-            <div style={{ fontSize: '0.875rem', color: '#78716c', fontWeight: 500 }}>Top Indian Universities</div>
+            <div className="font-serif" style={{ fontSize: '2.25rem', fontWeight: 800, color: '#059669' }}>50+</div>
+            <div style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>Top Universities</div>
           </div>
         </div>
       </section>
 
-      {/* FEATURE CARDS GRID */}
-      <section style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        <h2 className="font-serif" style={{ textAlign: 'center', fontSize: '2.25rem', marginBottom: '2.5rem' }}>
-          Built Around the Student Learning Loop
+      {/* LEARNING FEATURES */}
+      <section>
+        <h2 className="font-serif" style={{ textAlign: 'center', fontSize: '1.875rem', marginBottom: '2rem' }}>
+          Student Learning Loop Features
         </h2>
-
         <div className="grid-2">
-          <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <HelpCircle size={26} />
+          <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <HelpCircle size={24} />
             </div>
-            <h3 className="font-serif" style={{ fontSize: '1.375rem' }}>1. Live Doubt Rooms & WebRTC Calls</h3>
-            <p style={{ color: '#57534e', fontSize: '0.9375rem', lineHeight: 1.5 }}>
+            <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>1. Live Doubt Rooms & WebRTC Calls</h3>
+            <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.5 }}>
               Open a doubt workspace, chat with a helper from your department, and start 1-click video calls with screen sharing.
             </p>
           </div>
 
-          <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={26} />
+          <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={24} />
             </div>
-            <h3 className="font-serif" style={{ fontSize: '1.375rem' }}>2. 8-Factor Smart Peer Discovery</h3>
-            <p style={{ color: '#57534e', fontSize: '0.9375rem', lineHeight: 1.5 }}>
+            <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>2. 8-Factor Smart Peer Discovery</h3>
+            <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.5 }}>
               Match algorithm evaluating college, department, skills, learning goals, and mutual connections for exact peer pairings.
-            </p>
-          </div>
-
-          <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Tv2 size={26} />
-            </div>
-            <h3 className="font-serif" style={{ fontSize: '1.375rem' }}>3. Instagram-Style Educational Shorts</h3>
-            <p style={{ color: '#57534e', fontSize: '0.9375rem', lineHeight: 1.5 }}>
-              Watch and post 60-second concept shorts with red heart likes, slide-up comments, and subject hashtag pills.
-            </p>
-          </div>
-
-          <div className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Trophy size={26} />
-            </div>
-            <h3 className="font-serif" style={{ fontSize: '1.375rem' }}>4. Campus Leaderboard & Badges</h3>
-            <p style={{ color: '#57534e', fontSize: '0.9375rem', lineHeight: 1.5 }}>
-              Earn XP, level badges, and peer coins for helping others, ascending to Rank #1 on your campus leaderboard.
             </p>
           </div>
         </div>
