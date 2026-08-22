@@ -35,11 +35,10 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/ws/**").permitAll() // WebSocket endpoint is secured inside the handler or connection interceptor
-                .requestMatchers("/api/auth/**").permitAll() // Custom auth endpoints if needed
-                .requestMatchers("/error").permitAll()
+                .requestMatchers("/", "/health", "/h2-console/**", "/ws/**", "/api/auth/**", "/error").permitAll()
                 .anyRequest().authenticated()
             )
+            .headers(headers -> headers.frameOptions(frame -> frame.disable())) // Enable frame options for H2 console
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

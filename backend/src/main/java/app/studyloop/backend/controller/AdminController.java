@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -67,7 +66,7 @@ public class AdminController {
 
     @GetMapping("/analytics")
     public ResponseEntity<?> getAnalytics(@AuthenticationPrincipal UserPrincipal principal) {
-        AdminUser admin = verifyAdmin(principal);
+        verifyAdmin(principal);
 
         long totalUsers = profileRepository.count();
         long totalDoubts = doubtRoomRepository.count();

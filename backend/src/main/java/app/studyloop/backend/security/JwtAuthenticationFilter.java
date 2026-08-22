@@ -8,7 +8,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,9 +25,10 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
-@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Value("${supabase.jwt.secret:}")
     private String jwtSecret;
@@ -92,7 +94,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String[] parts = token.split("\\.");
                 if (parts.length >= 2) {
                     String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-                    Map<String, Object> claims = objectMapper.readValue(payloadJson, Map.class);
+                    Map<String, Object> claims = objectMapper.readValue(payloadJson, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
 
                     String userIdStr = (String) claims.get("sub");
                     String email = (String) claims.get("email");

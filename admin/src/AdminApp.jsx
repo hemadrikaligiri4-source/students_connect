@@ -42,8 +42,9 @@ export default function AdminApp() {
 
   const handleLogin = (email) => {
     // Generate a mock JWT for back-office admin auth
-    const mockToken = "mock-admin-" + email;
-    const mockJwt = btoa(JSON.stringify({ sub: "admin-uuid", email: email, role: "super_admin" })) + ".payload.signature";
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const payload = btoa(JSON.stringify({ sub: "00000000-0000-0000-0000-000000000000", email: email, role: "super_admin" }));
+    const mockJwt = `${header}.${payload}.signature`;
     
     localStorage.setItem('studyloop_admin_token', mockJwt);
     setAdminToken(mockJwt);

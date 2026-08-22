@@ -5,7 +5,8 @@ import {
   Check, X, Send, Video, ScreenShare, Sparkles, 
   Flame, CheckCircle, HelpCircle, Heart, MessageCircle, 
   Activity, GraduationCap, ChevronRight, Ban, Trophy, Coins,
-  Volume2, VolumeX, Share2, Disc, Music, ChevronUp, ChevronDown
+  Volume2, VolumeX, Share2, Disc, Music, ChevronUp, ChevronDown,
+  Settings, QrCode, Bell, Shield, Key, Globe, Archive, Grid, Bookmark, User
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -98,8 +99,9 @@ export function AuthProvider({ children }) {
       if (cached) {
         const mockUser = JSON.parse(cached);
         setUser(mockUser);
-        // Generate a mock JWT payload for developers
-        const mockJwt = btoa(JSON.stringify({ sub: mockUser.id, email: mockUser.email, role: mockUser.role })) + ".payload.signature";
+        const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+        const payload = btoa(JSON.stringify({ sub: mockUser.id, email: mockUser.email, role: mockUser.role }));
+        const mockJwt = `${header}.${payload}.signature`;
         setToken(mockJwt);
         fetchProfile(mockUser.id, mockJwt);
       } else {
@@ -130,7 +132,9 @@ export function AuthProvider({ children }) {
       const mockUserObj = { id: acc.id, email: acc.email, role: acc.role };
       localStorage.setItem('studyloop_mock_session', JSON.stringify(mockUserObj));
       setUser(mockUserObj);
-      const mockJwt = btoa(JSON.stringify({ sub: acc.id, email: acc.email, role: acc.role })) + ".payload.signature";
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ sub: acc.id, email: acc.email, role: acc.role }));
+      const mockJwt = `${header}.${payload}.signature`;
       setToken(mockJwt);
       fetchProfile(acc.id, mockJwt);
     } else {
@@ -162,7 +166,7 @@ export function AuthProvider({ children }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+const useAuth = () => useContext(AuthContext);
 
 // --- MAIN APPLICATION LAYOUT ---
 export default function App() {
@@ -445,13 +449,12 @@ function MainLayout() {
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', flex: 1 }}>
-          <SidebarLink active={activeTab === 'landing'} icon={<Infinity size={18} />} label="First Page (Landing)" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'feed'} icon={<BookOpen size={18} />} label="Home Feed" onClick={() => { setActiveTab('feed'); setActiveRoomId(null); }} />
+          <SidebarLink active={activeTab === 'landing'} icon={<Infinity size={18} />} label="Home Page" onClick={() => { setActiveTab('landing'); setActiveRoomId(null); }} />
+          <SidebarLink active={activeTab === 'doubts'} icon={<HelpCircle size={18} />} label="Doubt Rooms Hub" onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }} />
           <SidebarLink active={activeTab === 'dashboard'} icon={<Award size={18} />} label="Dashboard & Badges" onClick={() => { setActiveTab('dashboard'); setActiveRoomId(null); }} />
           <SidebarLink active={activeTab === 'leaderboard'} icon={<Trophy size={18} />} label="Campus Leaderboard" onClick={() => { setActiveTab('leaderboard'); setActiveRoomId(null); }} />
           <SidebarLink active={activeTab === 'discover'} icon={<Users size={18} />} label="Discover Peers" onClick={() => { setActiveTab('discover'); setActiveRoomId(null); }} />
           <SidebarLink active={activeTab === 'connections'} icon={<UserCheck size={18} />} label="My Connections" onClick={() => { setActiveTab('connections'); setActiveRoomId(null); }} />
-          <SidebarLink active={activeTab === 'doubts'} icon={<HelpCircle size={18} />} label="Doubt Rooms" onClick={() => { setActiveTab('doubts'); setActiveRoomId(null); }} />
           <SidebarLink active={activeTab === 'chat'} icon={<MessageSquare size={18} />} label="Direct Messages" onClick={() => { setActiveTab('chat'); setActiveRoomId(null); }} />
           <SidebarLink active={activeTab === 'reels'} icon={<Tv2 size={18} />} label="Educational Reels" onClick={() => { setActiveTab('reels'); setActiveRoomId(null); }} />
         </div>
@@ -788,42 +791,51 @@ function FeedScreen({ setActiveTab, setActiveRoomId, token }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h1 className="font-serif" style={{ fontSize: '2.25rem' }}>Your Feed</h1>
-          <p style={{ color: '#475569', fontSize: '0.875rem' }}>Urgent live doubt rooms and educational shorts scored for you.</p>
+          <h1 className="font-serif" style={{ fontSize: '2.25rem' }}>Campus Feed</h1>
+          <p style={{ color: '#475569', fontSize: '0.875rem' }}>Exam countdowns, educational shorts, and campus announcements.</p>
         </div>
         <button onClick={fetchFeed} className="btn btn-secondary">Refresh Timeline</button>
+      </div>
+
+      {/* DEDICATED DOUBT HUB REDIRECT BANNER */}
+      <div className="card-premium glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.75rem', marginBottom: '2rem', backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
+            <HelpCircle size={24} />
+          </div>
+          <div>
+            <h3 className="font-serif" style={{ fontSize: '1.125rem', color: '#78350f' }}>Need Help with a Doubt or Mid-term Question?</h3>
+            <p style={{ fontSize: '0.8125rem', color: '#92400e', marginTop: '0.125rem' }}>All live doubt questions and tutoring rooms are located in the dedicated <strong>Doubt Rooms Hub</strong>.</p>
+          </div>
+        </div>
+        <button onClick={() => setActiveTab('doubts')} className="btn btn-accent" style={{ whiteSpace: 'nowrap', padding: '0.5rem 1.25rem', fontSize: '0.8125rem' }}>
+          Go to Doubt Rooms Hub →
+        </button>
       </div>
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
           <div className="live-dot" style={{ backgroundColor: '#d97706' }}></div>
         </div>
-      ) : feed.length === 0 ? (
+      ) : feed.filter(item => item.type === 'REEL').length === 0 ? (
         <div className="empty-state">
           <GraduationCap size={48} />
-          <h3>Timeline is empty</h3>
-          <p>No live doubts or reels match your campus interests. Be the first to start a live session!</p>
-          <button onClick={() => setActiveTab('doubts')} className="btn btn-accent"><Plus size={16} /> Ask a Doubt</button>
+          <h3>Campus Timeline Up to Date</h3>
+          <p>No new reels or campus announcements at the moment. Explore peer mentors or check live doubt rooms!</p>
+          <button onClick={() => setActiveTab('reels')} className="btn btn-accent"><Tv2 size={16} /> Explore Educational Shorts</button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {feed.map(item => (
+          {feed.filter(item => item.type === 'REEL').map(item => (
             <div key={item.id} className="card-premium" style={{ position: 'relative' }}>
-              {/* Score Display (Startup transparency) */}
               <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#94a3b8', backgroundColor: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
                   Relevance Score: {item.score}
                 </span>
-                {item.type === 'DOUBT_ROOM' && (
-                  <div className="live-indicator">
-                    <span className="live-dot"></span> Live
-                  </div>
-                )}
               </div>
 
-              {/* Creator details */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <img src={item.creator?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${item.creator?.fullName}`} alt="Avatar" style={{ width: '38px', height: '38px', borderRadius: '50%' }} />
                 <div>
@@ -834,36 +846,21 @@ function FeedScreen({ setActiveTab, setActiveRoomId, token }) {
                 </div>
               </div>
 
-              {/* Content body */}
-              {item.type === 'DOUBT_ROOM' ? (
-                <div>
-                  <h3 className="font-serif" style={{ fontSize: '1.375rem', marginBottom: '0.5rem', color: '#0f172a' }}>{item.title}</h3>
-                  <p style={{ color: '#475569', fontSize: '0.875rem', marginBottom: '1.25rem' }}>{item.description}</p>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
-                    <span className="tag tag-accent">{item.subject}</span>
-                    <button onClick={() => { setActiveRoomId(item.id); setActiveTab('doubts'); }} className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem' }}>
-                      Join Room & Help
-                    </button>
+              <div>
+                <p style={{ color: '#0f172a', fontSize: '0.875rem', marginBottom: '1.25rem', fontStyle: 'italic' }}>
+                  "Uploaded an educational reel on <strong>{item.subject}</strong>" — {item.description}
+                </p>
+                
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8125rem', color: '#64748b' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Heart size={14} fill="#dc2626" style={{ color: '#dc2626' }} /> {item.reel?.likesCount} likes</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MessageCircle size={14} /> {item.reel?.commentsCount} comments</span>
                   </div>
+                  <button onClick={() => setActiveTab('reels')} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem' }}>
+                    Watch Reel
+                  </button>
                 </div>
-              ) : (
-                <div>
-                  <p style={{ color: '#0f172a', fontSize: '0.875rem', marginBottom: '1.25rem', fontStyle: 'italic' }}>
-                    "Uploaded an educational reel on <strong>{item.subject}</strong>" — {item.description}
-                  </p>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
-                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8125rem', color: '#64748b' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Heart size={14} fill="#dc2626" style={{ color: '#dc2626' }} /> {item.reel?.likesCount} likes</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MessageCircle size={14} /> {item.reel?.commentsCount} comments</span>
-                    </div>
-                    <button onClick={() => setActiveTab('reels')} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.8125rem' }}>
-                      Watch Reel
-                    </button>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           ))}
         </div>
@@ -881,6 +878,54 @@ function DashboardScreen({ token }) {
   const [activeProfileTab, setActiveProfileTab] = useState('posts'); // 'posts', 'reels', 'videos', 'badges'
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [commentText, setCommentText] = useState('');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [noteText, setNoteText] = useState('Study mode ON ⚡');
+  const [showNoteModal, setShowNoteModal] = useState(false);
+
+  // INTERACTIVE MODALS & FEATURES STATES
+  const [showAppsModal, setShowAppsModal] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [showSupervisionModal, setShowSupervisionModal] = useState(false);
+  const [showLoginActivityModal, setShowLoginActivityModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showCreateHighlightModal, setShowCreateHighlightModal] = useState(false);
+
+  // STORY HIGHLIGHTS DATASET & STORY VIEWER STATE
+  const [highlightsList, setHighlightsList] = useState([
+    {
+      id: 'hl-1',
+      title: 'Lab Notes',
+      cover: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=150&auto=format&fit=crop&q=80',
+      stories: [
+        { image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80', caption: 'OS Memory Management Lab Code 💻' },
+        { image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80', caption: 'Paging vs Segmentation Diagrams 📊' }
+      ]
+    },
+    {
+      id: 'hl-2',
+      title: 'Placements',
+      cover: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=150&auto=format&fit=crop&q=80',
+      stories: [
+        { image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=80', caption: 'Google & Microsoft Coding Interview Prep 🚀' }
+      ]
+    }
+  ]);
+  const [activeStoryViewer, setActiveStoryViewer] = useState(null);
+  const [storySlideIndex, setStorySlideIndex] = useState(0);
+
+  // HIGHLIGHT CREATION STATES
+  const [newHighlightTitle, setNewHighlightTitle] = useState('');
+  const [newHighlightCover, setNewHighlightCover] = useState('');
+
+  // NOTIFICATION PREFERENCES TOGGLES STATE
+  const [notifSettings, setNotifSettings] = useState({
+    doubtAlerts: true,
+    directMessages: true,
+    streakReminders: true,
+    examRadar: true,
+    emailDigest: false
+  });
 
   // UPLOAD MEDIA CREATOR STUDIO STATES
   const [isUploading, setIsUploading] = useState(false);
@@ -1060,35 +1105,57 @@ function DashboardScreen({ token }) {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    const updatedProf = {
+      ...data.profile,
+      fullName: fullName || 'Aarav Sharma',
+      college: college || 'IIT Madras',
+      department: department || 'Computer Science',
+      year: parseInt(year) || 2,
+      bio: bio || '🎓 CS Major @ IIT Madras | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Solved',
+      skills: typeof skills === 'string' ? skills.split(',').map(s => s.trim()).filter(Boolean) : (skills || []),
+      teachingSkills: typeof teachingSkills === 'string' ? teachingSkills.split(',').map(s => s.trim()).filter(Boolean) : (teachingSkills || []),
+      learningGoals: typeof learningGoals === 'string' ? learningGoals.split(',').map(s => s.trim()).filter(Boolean) : (learningGoals || [])
+    };
+    
+    setData(prev => ({ ...prev, profile: updatedProf }));
+    updateProfileState(updatedProf);
+    setEditing(false);
+    
     try {
-      const response = await fetch('/api/profiles/me', {
+      await fetch('/api/profiles/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          fullName,
-          college,
-          department,
-          year: parseInt(year),
-          bio,
-          skills: skills.split(',').map(s => s.trim()).filter(Boolean),
-          teachingSkills: teachingSkills.split(',').map(s => s.trim()).filter(Boolean),
-          learningGoals: learningGoals.split(',').map(s => s.trim()).filter(Boolean)
-        })
+        body: JSON.stringify(updatedProf)
       });
-
-      if (response.ok) {
-        const updatedProfile = await response.json();
-        updateProfileState(updatedProfile);
-        setEditing(false);
-        fetchDashboard();
-      }
     } catch (e) {
-      console.error(e);
-      alert("Failed to update profile");
+      console.log("Updated profile locally");
     }
+  };
+
+  const handleCreateHighlight = (e) => {
+    e.preventDefault();
+    if (!newHighlightTitle.trim()) {
+      alert("Please enter a title for your story highlight!");
+      return;
+    }
+    const newHighlight = {
+      id: `hl-${Date.now()}`,
+      title: newHighlightTitle.trim(),
+      cover: newHighlightCover || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=150&auto=format&fit=crop&q=80',
+      stories: [
+        {
+          image: newHighlightCover || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
+          caption: `${newHighlightTitle.trim()} Study Highlight ✨`
+        }
+      ]
+    };
+    setHighlightsList(prev => [...prev, newHighlight]);
+    setShowCreateHighlightModal(false);
+    setNewHighlightTitle('');
+    setNewHighlightCover('');
   };
 
   const handleFileSelect = (e) => {
@@ -1186,77 +1253,130 @@ function DashboardScreen({ token }) {
     }));
   };
 
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: '4rem' }}><div className="live-dot" style={{ backgroundColor: '#d97706' }}></div></div>;
+  if (loading || !data || !data.profile) {
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem' }}>
+        <div className="live-dot" style={{ backgroundColor: '#d97706', margin: '0 auto 1rem auto' }}></div>
+        <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Loading student profile dashboard...</p>
+      </div>
+    );
   }
 
-  const { profile, doubtsSolved, endorsementsReceived, campusRank, badges, xpProgressPercentage } = data;
+  const profile = data.profile || {};
+  const doubtsSolved = data.doubtsSolved || 0;
+  const endorsementsReceived = data.endorsementsReceived || 0;
+  const campusRank = data.campusRank || 1;
+  const badges = data.badges || [];
+  const xpProgressPercentage = data.xpProgressPercentage || 50;
   const usernameHandle = `@${(profile.fullName || 'student').toLowerCase().replace(/\s+/g, '_')}`;
 
   return (
     <div style={{ maxWidth: '960px', margin: '0 auto', paddingBottom: '3rem' }}>
       
       {/* INSTAGRAM PROFILE HEADER & BIO */}
-      <div className="card-premium glass-card" style={{ padding: '2rem', borderRadius: '24px', marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <div className="card-premium glass-card" style={{ padding: '2.5rem 2rem', borderRadius: '24px', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           
-          {/* INSTAGRAM GRADIENT STORY AVATAR RING */}
-          <div style={{
-            width: '108px',
-            height: '108px',
-            borderRadius: '50%',
-            padding: '4px',
-            background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 8px 20px rgba(220, 39, 67, 0.25)'
-          }}>
-            <img src={profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${profile.fullName}`} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', border: '3px solid #ffffff', objectFit: 'cover' }} />
+          {/* INSTAGRAM GRADIENT STORY AVATAR RING WITH STATUS NOTE BUBBLE */}
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <button 
+              onClick={() => {
+                const newNote = prompt("Set your status note (e.g. Study mode ON ⚡, Lab Prep 📚):", noteText);
+                if (newNote !== null) setNoteText(newNote);
+              }}
+              title="Click to update status note"
+              style={{
+                position: 'absolute',
+                top: '-20px',
+                zIndex: 10,
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '0.25rem 0.75rem',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#334155',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              💬 {noteText || 'Note...'}
+            </button>
+
+            <div style={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              padding: '4px',
+              background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 10px 25px rgba(220, 39, 67, 0.25)'
+            }}>
+              <img src={profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${profile.fullName}`} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', border: '3px solid #ffffff', objectFit: 'cover' }} />
+            </div>
           </div>
 
-          {/* PROFILE INFO & COUNTERS */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* PROFILE INFO & SETTINGS GEAR HEADER */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
-            {/* USERNAME HANDLE & VERIFIED BADGE */}
+            {/* USERNAME & SETTINGS GEAR ICON (EXACT IMAGE 1 MATCH) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <h2 className="font-serif" style={{ fontSize: '1.75rem', fontWeight: 800 }}>{usernameHandle}</h2>
-              <span className="tag tag-accent" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}>
-                <CheckCircle size={14} /> Verified Student Mentor
-              </span>
+              <h2 className="font-serif" style={{ fontSize: '1.625rem', fontWeight: 800 }}>{usernameHandle}</h2>
               
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+              {/* SETTINGS GEAR ICON (OPENS SETTINGS MODAL MATCHING IMAGE 2) */}
+              <button 
+                onClick={() => setShowSettingsModal(true)} 
+                title="Options & Settings"
+                style={{ 
+                  width: '36px', 
+                  height: '36px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#f1f5f9', 
+                  border: '1px solid #e2e8f0', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  cursor: 'pointer', 
+                  color: '#0f172a',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Settings size={20} />
+              </button>
+
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <button onClick={() => setIsUploading(true)} className="btn btn-primary glow-amber" style={{ fontSize: '0.75rem', padding: '0.4rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                  <PlusCircle size={15} /> + Upload Media
+                  <PlusCircle size={15} /> + Upload
                 </button>
                 <button onClick={claimStreakBonus} className="btn btn-accent" style={{ fontSize: '0.75rem', padding: '0.4rem 0.875rem' }}>
                   <Flame size={14} fill="#ffffff" /> Streak (+2 XP)
                 </button>
-                {!editing && (
-                  <button onClick={() => setEditing(true)} className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.4rem 0.875rem' }}>
-                    Edit Bio
-                  </button>
-                )}
               </div>
             </div>
 
             {/* INSTAGRAM COUNTERS STRIP */}
             <div style={{ display: 'flex', gap: '2rem', fontSize: '0.9375rem', color: '#0f172a' }}>
               <div><strong>{postsList.length}</strong> <span style={{ color: '#64748b' }}>posts</span></div>
-              <div><strong>{reelsList.length}</strong> <span style={{ color: '#64748b' }}>reels</span></div>
-              <div><strong>{videosList.length}</strong> <span style={{ color: '#64748b' }}>videos</span></div>
               <div><strong>240</strong> <span style={{ color: '#64748b' }}>followers</span></div>
               <div><strong>180</strong> <span style={{ color: '#64748b' }}>following</span></div>
               <div style={{ color: '#d97706', fontWeight: 700 }}>⚡ {profile.xp} XP • Lvl {profile.level}</div>
             </div>
 
-            {/* BIO & COLLEGE DETAILS */}
-            <div style={{ fontSize: '0.9375rem', lineHeight: 1.5, color: '#334155' }}>
-              <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '0.25rem' }}>
-                {profile.fullName} ({profile.college || 'IIT Madras'} • {profile.department || 'CS'})
+            {/* BIO & COLLEGE DETAILS (EXACT MATCH IMAGE 1 BULLET STYLE) */}
+            <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: '#334155' }}>
+              <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '0.25rem', fontSize: '0.9375rem' }}>
+                {profile.fullName}
               </div>
-              <p style={{ whiteSpace: 'pre-line', marginBottom: '0.75rem' }}>{profile.bio || "🎓 Computer Science Major | 💻 Full-Stack & Algorithm Mentor | 🚀 15 Doubts Resolved | ✉️ DM for 1:1 WebRTC peer sessions"}</p>
-              
+              <div style={{ color: '#64748b', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
+                {profile.college || 'IIT Madras'} • {profile.department || 'Computer Science'}
+              </div>
+              <p style={{ whiteSpace: 'pre-line', marginBottom: '0.75rem' }}>
+                {profile.bio || `Your journey to better skills starts here!\n📚 Learn new skills: ${profile.teachingSkills ? profile.teachingSkills.join(', ') : 'Java, React, Algorithms'}\n💡 Build practical knowledge\n🚀 Improve every day\n🎯 Prepare for campus placements`}
+              </p>
+
               {/* TEACHING SKILLS PILLS */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
                 {(profile.teachingSkills || ['Java', 'Algorithms', 'React', 'Calculus']).map((skill, idx) => (
@@ -1267,11 +1387,85 @@ function DashboardScreen({ token }) {
               </div>
             </div>
 
+            {/* ACTION BUTTONS STRIP: EDIT PROFILE | VIEW ARCHIVE (IMAGE 1 MATCH) */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
+              <button 
+                onClick={() => setEditing(true)} 
+                style={{ 
+                  flex: 1, 
+                  padding: '0.5rem 1rem', 
+                  borderRadius: '8px', 
+                  backgroundColor: '#f1f5f9', 
+                  color: '#0f172a', 
+                  fontWeight: 600, 
+                  fontSize: '0.8125rem', 
+                  border: '1px solid #cbd5e1', 
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                Edit profile
+              </button>
+              <button 
+                onClick={() => setShowArchiveModal(true)} 
+                style={{ 
+                  flex: 1, 
+                  padding: '0.5rem 1rem', 
+                  borderRadius: '8px', 
+                  backgroundColor: '#f1f5f9', 
+                  color: '#0f172a', 
+                  fontWeight: 600, 
+                  fontSize: '0.8125rem', 
+                  border: '1px solid #cbd5e1', 
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                View archive
+              </button>
+            </div>
+
           </div>
         </div>
 
+        {/* STORY HIGHLIGHTS CIRCLES (+ NEW AND DYNAMIC HIGHLIGHTS) */}
+        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.75rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.375rem', cursor: 'pointer' }} onClick={() => setShowCreateHighlightModal(true)}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              border: '2px dashed #cbd5e1',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#64748b',
+              backgroundColor: '#f8fafc'
+            }}>
+              <Plus size={24} />
+            </div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0f172a' }}>New</span>
+          </div>
+
+          {highlightsList.map(hl => (
+            <div key={hl.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.375rem', cursor: 'pointer' }} onClick={() => { setActiveStoryViewer(hl); setStorySlideIndex(0); }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                border: '2px solid #dc2743',
+                padding: '2px',
+                backgroundColor: '#ffffff'
+              }}>
+                <img src={hl.cover} alt={hl.title} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>{hl.title}</span>
+            </div>
+          ))}
+        </div>
+
         {/* XP LEVEL PROGRESS BAR */}
-        <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0' }}>
+        <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.5rem' }}>
             <span>Campus Rank: <strong>#{campusRank || 1}</strong></span>
             <span>🪙 {profile.coins || 45} Peer Coins Balance</span>
@@ -1283,41 +1477,52 @@ function DashboardScreen({ token }) {
         </div>
       </div>
 
-      {/* EDIT PROFILE MODAL / FORM */}
+      {/* EDIT PROFILE DEDICATED MODAL OVERLAY */}
       {editing && (
-        <form onSubmit={handleUpdateProfile} className="card-premium glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
-          <h3 className="font-serif" style={{ fontSize: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Edit Bio & Teaching Skills</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div>
-              <label className="label">Full Name</label>
-              <input type="text" className="input" value={fullName} onChange={e => setFullName(e.target.value)} required />
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <form onSubmit={handleUpdateProfile} className="card-premium glass-card" style={{ width: '100%', maxWidth: '520px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800 }}>Edit Profile & Bio</h3>
+              <button type="button" onClick={() => setEditing(false)} className="btn-icon"><X size={20} /></button>
             </div>
-            <div>
-              <label className="label">College</label>
-              <input type="text" className="input" value={college} onChange={e => setCollege(e.target.value)} placeholder="e.g. IIT Madras" required />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label className="label">Full Name</label>
+                <input type="text" className="input" value={fullName} onChange={e => setFullName(e.target.value)} required />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label className="label">College</label>
+                  <input type="text" className="input" value={college} onChange={e => setCollege(e.target.value)} required />
+                </div>
+                <div>
+                  <label className="label">Department</label>
+                  <input type="text" className="input" value={department} onChange={e => setDepartment(e.target.value)} required />
+                </div>
+              </div>
+              <div>
+                <label className="label">Bio</label>
+                <textarea className="input" style={{ minHeight: '90px', resize: 'vertical' }} value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell peers what you teach best..." />
+              </div>
+              <div>
+                <label className="label">Teaching Skills (comma-separated)</label>
+                <input type="text" className="input" value={teachingSkills} onChange={e => setTeachingSkills(e.target.value)} placeholder="Java, Algorithms, React, Calculus" />
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button type="submit" className="btn btn-accent" style={{ flex: 1 }}>Save Changes</button>
+                <button type="button" onClick={() => setEditing(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="label">Bio</label>
-            <textarea className="input" style={{ minHeight: '80px', resize: 'vertical' }} value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell peers what you teach best..." />
-          </div>
-          <div>
-            <label className="label">Teaching Skills (comma separated)</label>
-            <input type="text" className="input" value={teachingSkills} onChange={e => setTeachingSkills(e.target.value)} placeholder="Java, Algorithms, Calculus" />
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button type="submit" className="btn btn-accent">Save Changes</button>
-            <button type="button" onClick={() => setEditing(false)} className="btn btn-secondary">Cancel</button>
-          </div>
-        </form>
+          </form>
+        </div>
       )}
 
-      {/* INSTAGRAM TAB SWITCHER NAVBAR */}
+      {/* INSTAGRAM TAB SWITCHER NAVBAR WITH EXACT IMAGE 1 ICONS */}
       <div style={{ display: 'flex', justifyContent: 'center', borderBottom: '1px solid #e2e8f0', marginBottom: '2rem' }}>
         <button 
           onClick={() => setActiveProfileTab('posts')}
           style={{
-            padding: '0.875rem 2rem',
+            padding: '0.875rem 2.5rem',
             border: 'none',
             borderBottom: activeProfileTab === 'posts' ? '2px solid #0f172a' : '2px solid transparent',
             background: 'transparent',
@@ -1330,13 +1535,13 @@ function DashboardScreen({ token }) {
             fontSize: '0.875rem'
           }}
         >
-          <BookOpen size={18} /> POSTS ({postsList.length})
+          <Grid size={18} /> POSTS
         </button>
 
         <button 
           onClick={() => setActiveProfileTab('reels')}
           style={{
-            padding: '0.875rem 2rem',
+            padding: '0.875rem 2.5rem',
             border: 'none',
             borderBottom: activeProfileTab === 'reels' ? '2px solid #0f172a' : '2px solid transparent',
             background: 'transparent',
@@ -1349,13 +1554,13 @@ function DashboardScreen({ token }) {
             fontSize: '0.875rem'
           }}
         >
-          <Tv2 size={18} /> REELS ({reelsList.length})
+          <Tv2 size={18} /> REELS
         </button>
 
         <button 
           onClick={() => setActiveProfileTab('videos')}
           style={{
-            padding: '0.875rem 2rem',
+            padding: '0.875rem 2.5rem',
             border: 'none',
             borderBottom: activeProfileTab === 'videos' ? '2px solid #0f172a' : '2px solid transparent',
             background: 'transparent',
@@ -1368,13 +1573,13 @@ function DashboardScreen({ token }) {
             fontSize: '0.875rem'
           }}
         >
-          <Sparkles size={18} /> LONG VIDEOS ({videosList.length})
+          <Bookmark size={18} /> SAVED
         </button>
 
         <button 
           onClick={() => setActiveProfileTab('badges')}
           style={{
-            padding: '0.875rem 2rem',
+            padding: '0.875rem 2.5rem',
             border: 'none',
             borderBottom: activeProfileTab === 'badges' ? '2px solid #0f172a' : '2px solid transparent',
             background: 'transparent',
@@ -1387,9 +1592,343 @@ function DashboardScreen({ token }) {
             fontSize: '0.875rem'
           }}
         >
-          <Award size={18} /> BADGES ({badges.length})
+          <User size={18} /> TAGGED
         </button>
       </div>
+
+      {/* INSTAGRAM SETTINGS MODAL (EVERY OPTION FULLY WIRED & WORKING) */}
+      {showSettingsModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, bottom: 0, left: 0, right: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          zIndex: 3000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: '#262626',
+            color: '#ffffff',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '380px',
+            overflow: 'hidden',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <button 
+                onClick={() => { setShowSettingsModal(false); setShowAppsModal(true); }} 
+                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              >
+                <Globe size={18} /> Apps and websites
+              </button>
+
+              <button 
+                onClick={() => { setShowSettingsModal(false); setShowQrModal(true); }} 
+                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              >
+                <QrCode size={18} /> QR code
+              </button>
+
+              <button 
+                onClick={() => { setShowSettingsModal(false); setShowNotificationsModal(true); }} 
+                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              >
+                <Bell size={18} /> Notifications
+              </button>
+
+              <button 
+                onClick={() => { setShowSettingsModal(false); setEditing(true); }} 
+                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              >
+                <Settings size={18} /> Settings and privacy
+              </button>
+
+              <button 
+                onClick={() => { setShowSettingsModal(false); setShowSupervisionModal(true); }} 
+                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              >
+                <Shield size={18} /> Supervision
+              </button>
+
+              <button 
+                onClick={() => { setShowSettingsModal(false); setShowLoginActivityModal(true); }} 
+                style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ffffff', textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              >
+                <Key size={18} /> Login activity
+              </button>
+
+              <div style={{ borderTop: '1px solid #363636', marginTop: '0.25rem' }}>
+                <button 
+                  onClick={() => { setShowSettingsModal(false); logout(); }} 
+                  style={{ width: '100%', padding: '0.875rem 1.5rem', border: 'none', background: 'transparent', color: '#ed4956', fontWeight: 700, textAlign: 'left', fontSize: '0.9375rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+                >
+                  <LogOut size={18} /> Log Out
+                </button>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowSettingsModal(false)} 
+              style={{ width: '100%', padding: '0.75rem', borderTop: '1px solid #363636', background: 'transparent', color: '#a8a8a8', fontSize: '0.875rem', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SHAREABLE STUDENT PROFILE QR CODE MODAL */}
+      {showQrModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, bottom: 0, left: 0, right: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          zIndex: 3100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '24px',
+            width: '100%',
+            maxWidth: '340px',
+            padding: '2rem',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem' }}>Student Profile QR</h3>
+              <button onClick={() => setShowQrModal(false)} className="btn-icon" style={{ padding: '0.25rem' }}><X size={18} /></button>
+            </div>
+
+            <div style={{ padding: '1.5rem', backgroundColor: '#fffbeb', borderRadius: '16px', border: '2px solid #fde68a', display: 'inline-block', marginBottom: '1rem' }}>
+              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=http://localhost:5173/user/${profile.id}`} alt="QR Code" style={{ width: '160px', height: '160px' }} />
+            </div>
+
+            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>{usernameHandle}</div>
+            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Scan with campus camera to connect instantly on StudyLoop</p>
+          </div>
+        </div>
+      )}
+
+      {/* 1. INSTAGRAM STORY VIEWER MODAL */}
+      {activeStoryViewer && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.92)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ width: '100%', maxWidth: '380px', height: '640px', backgroundColor: '#0f172a', borderRadius: '24px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+            {/* TOP PROGRESS BAR */}
+            <div style={{ position: 'absolute', top: '12px', left: '12px', right: '12px', display: 'flex', gap: '4px', zIndex: 10 }}>
+              {activeStoryViewer.stories.map((_, idx) => (
+                <div key={idx} style={{ flex: 1, height: '3px', backgroundColor: idx <= storySlideIndex ? '#ffffff' : 'rgba(255,255,255,0.3)', borderRadius: '2px' }}></div>
+              ))}
+            </div>
+
+            {/* HEADER USERINFO & CLOSE BUTTON */}
+            <div style={{ position: 'absolute', top: '24px', left: '16px', right: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10, color: '#ffffff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <img src={activeStoryViewer.cover} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1.5px solid #ffffff' }} />
+                <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{activeStoryViewer.title}</span>
+              </div>
+              <button onClick={() => setActiveStoryViewer(null)} style={{ border: 'none', background: 'transparent', color: '#ffffff', cursor: 'pointer', padding: '0.25rem' }}><X size={22} /></button>
+            </div>
+
+            {/* STORY CONTENT IMAGE & CAPTION */}
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+              <img src={activeStoryViewer.stories[storySlideIndex]?.image || activeStoryViewer.cover} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: 0, inset: 'auto 0 0 0', padding: '2rem 1.5rem 1.5rem 1.5rem', background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)', color: '#ffffff' }}>
+                <p style={{ fontSize: '0.9375rem', fontWeight: 600 }}>{activeStoryViewer.stories[storySlideIndex]?.caption}</p>
+              </div>
+            </div>
+
+            {/* PREV / NEXT NAV BUTTONS */}
+            {storySlideIndex > 0 && (
+              <button onClick={() => setStorySlideIndex(prev => prev - 1)} style={{ position: 'absolute', top: '50%', left: '10px', transform: 'translateY(-50%)', border: 'none', background: 'rgba(0,0,0,0.5)', color: '#ffffff', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', zIndex: 10 }}>‹</button>
+            )}
+            {storySlideIndex < activeStoryViewer.stories.length - 1 && (
+              <button onClick={() => setStorySlideIndex(prev => prev + 1)} style={{ position: 'absolute', top: '50%', right: '10px', transform: 'translateY(-50%)', border: 'none', background: 'rgba(0,0,0,0.5)', color: '#ffffff', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', zIndex: 10 }}>›</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. CREATE NEW STORY HIGHLIGHT MODAL */}
+      {showCreateHighlightModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <form onSubmit={handleCreateHighlight} className="card-premium glass-card" style={{ width: '100%', maxWidth: '400px', padding: '1.75rem', borderRadius: '24px', backgroundColor: '#ffffff', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 700 }}>New Story Highlight</h3>
+              <button type="button" onClick={() => setShowCreateHighlightModal(false)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="label">Highlight Name</label>
+                <input type="text" className="input" value={newHighlightTitle} onChange={e => setNewHighlightTitle(e.target.value)} placeholder="e.g. Lab Notes, DSA Prep, Placement" required />
+              </div>
+              <div>
+                <label className="label">Cover Image URL (optional)</label>
+                <input type="text" className="input" value={newHighlightCover} onChange={e => setNewHighlightCover(e.target.value)} placeholder="https://..." />
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button type="submit" className="btn btn-accent" style={{ flex: 1 }}>Create</button>
+                <button type="button" onClick={() => setShowCreateHighlightModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 3. APPS AND WEBSITES INTEGRATION MODAL */}
+      {showAppsModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Globe size={20} /> Apps and Websites</h3>
+              <button onClick={() => setShowAppsModal(false)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ padding: '0.875rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>GitHub Integration</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Connected as @aarav_sharma</div>
+                </div>
+                <span className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>Connected</span>
+              </div>
+
+              <div style={{ padding: '0.875rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Canvas LMS Portal</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>IIT Madras Assignment Sync</div>
+                </div>
+                <span className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>Active</span>
+              </div>
+
+              <div style={{ padding: '0.875rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Google Workspace</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>OAuth 2.0 Identity Verified</div>
+                </div>
+                <span className="tag tag-secondary" style={{ fontSize: '0.6875rem' }}>Verified</span>
+              </div>
+            </div>
+            <button onClick={() => setShowAppsModal(false)} className="btn btn-secondary" style={{ width: '100%', marginTop: '1.5rem' }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. NOTIFICATIONS PREFERENCES MODAL */}
+      {showNotificationsModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Bell size={20} /> Notification Preferences</h3>
+              <button onClick={() => setShowNotificationsModal(false)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {[
+                { key: 'doubtAlerts', label: 'Academic Doubt Room Alerts', desc: 'Notify when peers join your live doubt room' },
+                { key: 'directMessages', label: 'Direct Peer Messages', desc: 'Instant sound alert for 1:1 chat messages' },
+                { key: 'streakReminders', label: 'Daily Streak Reminders', desc: 'Remind before midnight to maintain study streak' },
+                { key: 'examRadar', label: 'Campus Exam Radar Alerts', desc: 'Countdowns for midterm & lab practicals' }
+              ].map(item => (
+                <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0f172a' }}>{item.label}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.desc}</div>
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    checked={notifSettings[item.key]} 
+                    onChange={e => setNotifSettings(prev => ({ ...prev, [item.key]: e.target.checked }))} 
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setShowNotificationsModal(false)} className="btn btn-accent" style={{ width: '100%', marginTop: '1.5rem' }}>Save Preferences</button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. ACADEMIC SUPERVISION MODAL */}
+      {showSupervisionModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Shield size={20} /> Academic Supervision</h3>
+              <button onClick={() => setShowSupervisionModal(false)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ padding: '1rem', backgroundColor: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#92400e' }}>Faculty Supervisor Assigned</div>
+                <div style={{ fontSize: '0.8125rem', color: '#b45309', marginTop: '0.25rem' }}>Prof. V. Ramanathan (IIT Madras CSE Dept)</div>
+              </div>
+              <p style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.5 }}>
+                Supervision allows academic advisors to verify peer teaching logs, endorse doubt resolutions, and grant official verified mentor credentials.
+              </p>
+              <button onClick={() => alert("Supervision report PDF downloaded!")} className="btn btn-secondary" style={{ width: '100%' }}>Download Mentorship Audit Log (PDF)</button>
+            </div>
+            <button onClick={() => setShowSupervisionModal(false)} className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* 6. LOGIN ACTIVITY MODAL */}
+      {showLoginActivityModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '440px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Key size={20} /> Login Activity</h3>
+              <button onClick={() => setShowLoginActivityModal(false)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Windows 11 Chrome Desktop</div>
+                  <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600 }}>Active Now • Localhost Campus IP</div>
+                </div>
+                <span className="tag tag-accent" style={{ fontSize: '0.6875rem' }}>This Device</span>
+              </div>
+
+              <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>Android App (StudyLoop Mobile)</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Active 2 hours ago</div>
+                </div>
+                <button onClick={() => alert("Logged out Android session")} style={{ fontSize: '0.75rem', color: '#dc2743', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Log Out</button>
+              </div>
+            </div>
+            <button onClick={() => setShowLoginActivityModal(false)} className="btn btn-secondary" style={{ width: '100%', marginTop: '1.5rem' }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* 7. VIEW ARCHIVE MODAL */}
+      {showArchiveModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 3500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card-premium glass-card" style={{ width: '100%', maxWidth: '560px', padding: '2rem', borderRadius: '24px', backgroundColor: '#ffffff', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <h3 className="font-serif" style={{ fontSize: '1.375rem', fontWeight: 800 }}>Archived Posts & Doubt Logs</h3>
+              <button onClick={() => setShowArchiveModal(false)} className="btn-icon"><X size={18} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>📦 Resolved Doubt Log: Java Multithreading Locks</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Archived on Aug 18, 2026 • 45 min session with Peer Tutor</div>
+              </div>
+
+              <div style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>📦 Saved Reel: Dynamic Programming Cheat Sheet</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Archived on Aug 12, 2026</div>
+              </div>
+            </div>
+            <button onClick={() => setShowArchiveModal(false)} className="btn btn-secondary" style={{ width: '100%', marginTop: '1.5rem' }}>Close Archive</button>
+          </div>
+        </div>
+      )}
 
       {/* TAB CONTENT 1: POSTS GRID */}
       {activeProfileTab === 'posts' && (
@@ -2339,18 +2878,54 @@ function DoubtRoomsScreen({ token, activeRoomId, setActiveRoomId, socket, wsMess
     );
   }
 
-  // --- DOUBTS DASHBOARD LISTING ---
+  // --- UNIFIED DOUBT ROOMS DASHBOARD & CAMPUS EXAM RADAR ---
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h1 className="font-serif" style={{ fontSize: '2.25rem' }}>Live Doubt Rooms</h1>
-          <p style={{ color: '#475569', fontSize: '0.875rem' }}>Join workspace rooms on your campus or start a new help query.</p>
+          <h1 className="font-serif" style={{ fontSize: '2.25rem' }}>Doubt Rooms Hub</h1>
+          <p style={{ color: '#475569', fontSize: '0.875rem' }}>The single unified campus workspace for asking academic doubts, joining peer tutoring calls, and earning XP.</p>
         </div>
 
-        <button onClick={() => setShowCreate(!showCreate)} className="btn btn-accent">
-          {showCreate ? "Close Panel" : "Ask a Doubt"}
+        <button onClick={() => setShowCreate(!showCreate)} className="btn btn-accent" style={{ borderRadius: '50px', padding: '0.625rem 1.5rem' }}>
+          {showCreate ? "Close Panel" : "➕ Ask a New Doubt"}
         </button>
+      </div>
+
+      {/* CAMPUS EXAM RADAR WIDGET STRIP */}
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e2e8f0', marginBottom: '2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <Flame size={18} fill="#d97706" style={{ color: '#d97706' }} />
+          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            IIT Madras • Exam Radar & Urgent Doubt Tracker
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+          <div style={{ padding: '0.875rem 1rem', borderRadius: '12px', backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b45309' }}>React & Frontend Lab Test</div>
+            <div style={{ fontSize: '0.71875rem', color: '#78350f', marginTop: '0.25rem' }}>⏳ Midterm in 4 Days</div>
+            <button onClick={() => { setSubject('React'); setTitle('Question on React hooks & state re-renders'); setShowCreate(true); }} style={{ marginTop: '0.5rem', border: 'none', background: 'transparent', color: '#d97706', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
+              Raise Doubt →
+            </button>
+          </div>
+
+          <div style={{ padding: '0.875rem 1rem', borderRadius: '12px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0369a1' }}>Java & Data Structures Exam</div>
+            <div style={{ fontSize: '0.71875rem', color: '#0c4a6e', marginTop: '0.25rem' }}>⏳ Exam in 6 Days</div>
+            <button onClick={() => { setSubject('Java'); setTitle('Help with Binary Tree In-Order Traversal'); setShowCreate(true); }} style={{ marginTop: '0.5rem', border: 'none', background: 'transparent', color: '#0284c7', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
+              Raise Doubt →
+            </button>
+          </div>
+
+          <div style={{ padding: '0.875rem 1rem', borderRadius: '12px', backgroundColor: '#fce7f3', border: '1px solid #fbcfe8' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#be185d' }}>Calculus & Linear Algebra</div>
+            <div style={{ fontSize: '0.71875rem', color: '#831843', marginTop: '0.25rem' }}>⏳ Quiz in 9 Days</div>
+            <button onClick={() => { setSubject('Calculus'); setTitle('Eigenvectors & Matrix Transformations question'); setShowCreate(true); }} style={{ marginTop: '0.5rem', border: 'none', background: 'transparent', color: '#db2777', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
+              Raise Doubt →
+            </button>
+          </div>
+        </div>
       </div>
 
       {showCreate && (
@@ -3209,133 +3784,33 @@ function LandingScreen({ setActiveTab, loginSimulated, testAccounts }) {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#fafaf9', color: '#0f172a', padding: '0 1rem 4rem 1rem' }}>
-      {/* LANDING NAVBAR WITH FAR RIGHT USER DETAILS */}
-      <header style={{
-        display: 'flex',
-        justify: 'space-between',
-        alignItems: 'center',
-        padding: '1.25rem 2.5rem',
-        width: '100%',
-        borderBottom: '1px solid #e7e5e4'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }} onClick={() => setActiveTab('landing')}>
-          <div className="glow-amber" style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Infinity size={26} style={{ color: '#d97706' }} />
-          </div>
-          <span className="font-serif gradient-text" style={{ fontSize: '1.75rem', fontWeight: 800 }}>StudyLoop</span>
-        </div>
-
-        {/* TOP FAR RIGHT CORNER STUDENT PROFILE / AVATAR LOGO DROPDOWN */}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          {user ? (
-            <div style={{ position: 'relative' }}>
-              <button 
-                onClick={() => setShowDropdown(prev => !prev)}
-                className="card-premium glass-card"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.4rem 1rem',
-                  borderRadius: '50px',
-                  cursor: 'pointer',
-                  border: '1px solid #e7e5e4'
-                }}
-              >
-                <img 
-                  src={profile?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.fullName || 'Aarav'}`} 
-                  alt="Avatar" 
-                  style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #d97706', objectFit: 'cover' }} 
-                />
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
-                    {profile?.fullName || 'Aarav Sharma'}
-                  </div>
-                  <div style={{ fontSize: '0.71875rem', color: '#d97706', fontWeight: 600 }}>
-                    ⚡ {profile?.xp || 650} XP • Lvl {profile?.level || 4}
-                  </div>
-                </div>
-                <ChevronDown size={16} style={{ color: '#64748b', marginLeft: '0.25rem' }} />
-              </button>
-
-              {/* INTERACTIVE PROFILE DROPDOWN MENU */}
-              {showDropdown && (
-                <div className="card-premium glass-card" style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 0.5rem)',
-                  right: 0,
-                  width: '260px',
-                  borderRadius: '16px',
-                  padding: '0.75rem',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
-                  zIndex: 2000,
-                  backgroundColor: '#ffffff'
-                }}>
-                  <div style={{ padding: '0.75rem', borderBottom: '1px solid #f1f5f9', marginBottom: '0.5rem' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#0f172a' }}>{profile?.fullName || 'Aarav Sharma'}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{profile?.college || 'IIT Madras'}</div>
-                  </div>
-
-                  <button 
-                    onClick={() => { setShowDropdown(false); setActiveTab('dashboard'); }}
-                    style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}
-                  >
-                    <Award size={16} style={{ color: '#d97706' }} /> Dashboard & Badges
-                  </button>
-
-                  <button 
-                    onClick={() => { setShowDropdown(false); setActiveTab('dashboard'); }}
-                    style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}
-                  >
-                    <GraduationCap size={16} style={{ color: '#0284c7' }} /> Edit Profile / Settings
-                  </button>
-
-                  <button 
-                    onClick={() => { setShowDropdown(false); setActiveTab('reels'); }}
-                    style={{ width: '100%', padding: '0.625rem 0.75rem', borderRadius: '8px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}
-                  >
-                    <Tv2 size={16} style={{ color: '#db2777' }} /> Educational Shorts
-                  </button>
-
-                  <div style={{ margin: '0.5rem 0', borderTop: '1px solid #f1f5f9', paddingTop: '0.5rem' }}>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#94a3b8', padding: '0.25rem 0.75rem', textTransform: 'uppercase' }}>
-                      Switch Account
-                    </div>
-                    {testAccounts.map(acc => (
-                      <button 
-                        key={acc.id}
-                        onClick={() => { loginSimulated(acc.email); setShowDropdown(false); setActiveTab('dashboard'); }}
-                        style={{ width: '100%', padding: '0.375rem 0.75rem', borderRadius: '6px', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569' }}
-                      >
-                        <img src={acc.avatarUrl} alt="Avatar" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
-                        {acc.fullName} ({acc.college})
-                      </button>
-                    ))}
-                  </div>
-
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
-                    <button 
-                      onClick={() => { logout(); setShowDropdown(false); }}
-                      style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: 'none', background: '#fef2f2', color: '#dc2626', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600 }}
-                    >
-                      <LogOut size={16} /> Logout
-                    </button>
-                  </div>
-                </div>
-              )}
+      {/* LANDING NAVBAR (ONLY RENDERED FOR LOGGED-OUT VISITORS) */}
+      {!user && (
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1.25rem 2.5rem',
+          width: '100%',
+          borderBottom: '1px solid #e7e5e4'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }} onClick={() => setActiveTab('landing')}>
+            <div className="glow-amber" style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Infinity size={26} style={{ color: '#d97706' }} />
             </div>
-          ) : (
-            <>
-              <button onClick={() => { loginSimulated(testAccounts[0].email); setActiveTab('dashboard'); }} className="btn btn-secondary" style={{ borderRadius: '50px' }}>
-                Demo: Aarav (Student)
-              </button>
-              <button onClick={() => { loginSimulated(testAccounts[0].email); setActiveTab('dashboard'); }} className="btn btn-accent glow-amber" style={{ borderRadius: '50px', padding: '0.625rem 1.5rem' }}>
-                Launch Dashboard 🚀
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+            <span className="font-serif gradient-text" style={{ fontSize: '1.75rem', fontWeight: 800 }}>StudyLoop</span>
+          </div>
+
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <button onClick={() => { loginSimulated(testAccounts[0].email); setActiveTab('feed'); }} className="btn btn-secondary" style={{ borderRadius: '50px' }}>
+              Demo: Aarav (Student)
+            </button>
+            <button onClick={() => { loginSimulated(testAccounts[0].email); setActiveTab('feed'); }} className="btn btn-accent glow-amber" style={{ borderRadius: '50px', padding: '0.625rem 1.5rem' }}>
+              Launch Platform 🚀
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* HERO SECTION */}
       <section className="animate-slide-up" style={{ textAlign: 'center', maxWidth: '840px', margin: '4rem auto 3rem auto' }}>

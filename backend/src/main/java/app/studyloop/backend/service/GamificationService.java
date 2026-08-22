@@ -1,11 +1,12 @@
 package app.studyloop.backend.service;
 
-import app.studyloop.backend.domain.Profile;
-import app.studyloop.backend.repository.ProfileRepository;
+import app.studyloop.backend.domain.*;
+import app.studyloop.backend.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service

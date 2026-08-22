@@ -1,9 +1,5 @@
 package app.studyloop.backend.security;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,18 +8,31 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class UserPrincipal implements UserDetails {
     private UUID id;
     private String email;
     private String role;
 
+    public UserPrincipal() {}
+
+    public UserPrincipal(UUID id, String email, String role) {
+        this.id = id;
+        this.email = email;
+        this.role = role;
+    }
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.toUpperCase() : "AUTHENTICATED")));
     }
 
     @Override
@@ -37,22 +46,30 @@ public class UserPrincipal implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
+    public boolean isAccountNonLocked() { return true; }
 
     @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() {
-        return true;
+    public boolean isEnabled() { return true; }
+
+    public static Builder builder() { return new Builder(); }
+
+    public static class Builder {
+        private UUID id;
+        private String email;
+        private String role;
+
+        public Builder id(UUID id) { this.id = id; return this; }
+        public Builder email(String email) { this.email = email; return this; }
+        public Builder role(String role) { this.role = role; return this; }
+
+        public UserPrincipal build() {
+            return new UserPrincipal(id, email, role);
+        }
     }
 }

@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -30,9 +30,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatWebSocketHandler.class);
 
     @Value("${supabase.jwt.secret:}")
     private String jwtSecret;
@@ -44,7 +45,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final DoubtMessageRepository doubtMessageRepository;
     private final DirectChatRepository directChatRepository;
     private final DirectMessageRepository directMessageRepository;
-    private final StringRedisTemplate redisTemplate;
+    private StringRedisTemplate redisTemplate;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Map of userId -> Set of WebSocketSessions
@@ -59,12 +61,15 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     public ChatWebSocketHandler(ProfileRepository profileRepository,
                                  DoubtMessageRepository doubtMessageRepository,
                                  DirectChatRepository directChatRepository,
-                                 DirectMessageRepository directMessageRepository,
-                                 StringRedisTemplate redisTemplate) {
+                                 DirectMessageRepository directMessageRepository) {
         this.profileRepository = profileRepository;
         this.doubtMessageRepository = doubtMessageRepository;
         this.directChatRepository = directChatRepository;
         this.directMessageRepository = directMessageRepository;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setRedisTemplate(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -269,6 +274,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void updatePresenceInRedis(UUID userId, boolean isOnline) {
+        if (redisTemplate == null) {
+            return; // Redis not configured — presence tracking disabled in local dev
+        }
         try {
             String key = "user:" + userId.toString() + ":online";
             if (isOnline) {
@@ -336,7 +344,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 String[] parts = token.split("\\.");
                 if (parts.length >= 2) {
                     String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-                    Map<String, Object> claims = objectMapper.readValue(payloadJson, Map.class);
+                    Map<String, Object> claims = objectMapper.readValue(payloadJson, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
                     return UUID.fromString((String) claims.get("sub"));
                 }
             }
@@ -346,7 +354,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         return null;
     }
 
-    @Data
+    @SuppressWarnings("unused")
     private static class WsMessage {
         private String type; // HEARTBEAT, JOIN_ROOM, LEAVE_ROOM, CHAT_MSG, DIRECT_MSG, RTC_SIGNAL
         private UUID roomId;
@@ -355,5 +363,26 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         private String message;
         private UUID targetUserId;
         private Object signalData; // WebRTC offer, answer, or candidates
+
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+
+        public UUID getRoomId() { return roomId; }
+        public void setRoomId(UUID roomId) { this.roomId = roomId; }
+
+        public UUID getChatId() { return chatId; }
+        public void setChatId(UUID chatId) { this.chatId = chatId; }
+
+        public UUID getSenderId() { return senderId; }
+        public void setSenderId(UUID senderId) { this.senderId = senderId; }
+
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+
+        public UUID getTargetUserId() { return targetUserId; }
+        public void setTargetUserId(UUID targetUserId) { this.targetUserId = targetUserId; }
+
+        public Object getSignalData() { return signalData; }
+        public void setSignalData(Object signalData) { this.signalData = signalData; }
     }
 }
